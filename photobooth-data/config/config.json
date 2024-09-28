@@ -2,7 +2,7 @@
   "common": {
     "admin_password": "0000",
     "logging_level": "DEBUG",
-    "webserver_bind_ip": "0.0.0.0",
+    "webserver_bind_ip": "127.0.0.1",
     "webserver_port": 8000,
     "users_delete_to_recycle_dir": true
   },
@@ -17,9 +17,9 @@
           "filter": "original",
           "fill_background_enable": false,
           "fill_background_color": "blue",
-          "img_background_enable": true,
+          "img_background_enable": false,
           "img_background_file": "backgrounds/pink-7761356_1920.jpg",
-          "img_frame_enable": true,
+          "img_frame_enable": false,
           "img_frame_file": "frames/pixabay-holidays-1798208_1920.png",
           "texts_enable": true,
           "texts": [
@@ -36,7 +36,7 @@
         },
         "trigger": {
           "ui_trigger": {
-            "show_button": true,
+            "show_button": false,
             "title": "Image",
             "icon": "photo_camera"
           },
@@ -54,10 +54,10 @@
       {
         "name": "default collage settings",
         "jobcontrol": {
-          "countdown_capture": 2.0,
-          "countdown_capture_second_following": 1.0,
-          "ask_approval_each_capture": true,
-          "approve_autoconfirm_timeout": 15.0,
+          "countdown_capture": 5.0,
+          "countdown_capture_second_following": 5.0,
+          "ask_approval_each_capture": false,
+          "approve_autoconfirm_timeout": 30.0,
           "gallery_hide_individual_images": false
         },
         "processing": {
@@ -69,40 +69,49 @@
           "canvas_height": 1280,
           "merge_definition": [
             {
-              "pos_x": 160,
-              "pos_y": 220,
-              "width": 510,
-              "height": 725,
+              "pos_x": 30,
+              "pos_y": 30,
+              "width": 915,
+              "height": 595,
               "rotate": 0,
               "predefined_image": "",
-              "filter": "earlybird"
-            },
-            {
-              "pos_x": 705,
-              "pos_y": 66,
-              "width": 510,
-              "height": 725,
-              "rotate": 0,
-              "predefined_image": "predefined_images/photobooth-collage-predefined-image.png",
               "filter": "original"
             },
             {
-              "pos_x": 1245,
-              "pos_y": 220,
-              "width": 510,
-              "height": 725,
+              "pos_x": 975,
+              "pos_y": 30,
+              "width": 915,
+              "height": 595,
               "rotate": 0,
               "predefined_image": "",
-              "filter": "reyes"
+              "filter": "original"
+            },
+            {
+              "pos_x": 30,
+              "pos_y": 655,
+              "width": 915,
+              "height": 595,
+              "rotate": 0,
+              "predefined_image": "",
+              "filter": "original"
+            },
+            {
+              "pos_x": 975,
+              "pos_y": 655,
+              "width": 915,
+              "height": 595,
+              "rotate": 0,
+              "predefined_image": "",
+              "filter": "original"
             }
           ],
           "canvas_fill_background_enable": false,
           "canvas_fill_background_color": "green",
           "canvas_img_background_enable": false,
           "canvas_img_background_file": "",
-          "canvas_img_front_enable": true,
+          "canvas_img_front_enable": false,
           "canvas_img_front_file": "frames/pixabay-poster-2871536_1920.png",
-          "canvas_texts_enable": true,
+          "canvas_texts_enable": false,
           "canvas_texts": [
             {
               "text": "Have a nice day :)",
@@ -118,7 +127,7 @@
         "trigger": {
           "ui_trigger": {
             "show_button": true,
-            "title": "Collage",
+            "title": "take pics",
             "icon": "auto_awesome_mosaic"
           },
           "keyboard_trigger": {
@@ -174,7 +183,7 @@
         },
         "trigger": {
           "ui_trigger": {
-            "show_button": true,
+            "show_button": false,
             "title": "Animation",
             "icon": "gif_box"
           },
@@ -201,7 +210,7 @@
         },
         "trigger": {
           "ui_trigger": {
-            "show_button": true,
+            "show_button": false,
             "title": "Video",
             "icon": "movie"
           },
@@ -270,18 +279,18 @@
     "removechromakey_tolerance": 10
   },
   "uisettings": {
-    "PRIMARY_COLOR": "#196cb0",
-    "SECONDARY_COLOR": "#b8124f",
+    "PRIMARY_COLOR": "#ea6f24",
+    "SECONDARY_COLOR": "#929497",
     "show_gallery_on_frontpage": true,
     "show_admin_on_frontpage": true,
     "show_automatic_slideshow_timeout": 300,
     "livestream_mirror_effect": true,
     "FRONTPAGE_TEXT": "<div class=\"fixed-center text-h2 text-weight-bold text-center text-white\" style=\"text-shadow: 4px 4px 4px #666;\">Hey!<br>Let's take some pictures! <br>📷💕</div>",
-    "TAKEPIC_MSG_TIME": 0.5,
+    "TAKEPIC_MSG_TIME": 1.0,
     "TAKEPIC_MSG_TEXT": "😃",
-    "AUTOCLOSE_NEW_ITEM_ARRIVED": 30,
+    "AUTOCLOSE_NEW_ITEM_ARRIVED": 60,
     "GALLERY_EMPTY_MSG": "<div class=\"fixed-center text-h2 text-weight-bold text-center text-white\" style=\"text-shadow: 4px 4px 4px #666;\">Empty, Zero, Nada! 🤷‍♂️<br>Let's take some pictures! <br>📷💕</div>",
-    "gallery_show_qrcode": true,
+    "gallery_show_qrcode": false,
     "gallery_show_filter": true,
     "gallery_filter_userselectable": [
       "original",
