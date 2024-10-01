@@ -97,8 +97,9 @@ python -c "from photobooth.services.backends.webcamv4l import *; print(available
 check opencv2 indexes:
 ```powershell
 python -c "from photobooth.services.backends.webcamcv2 import *; print(available_camera_indexes())"
-The command returns an array of indexes for which a webcam was detected.
 ```
+The command returns an array of indexes for which a webcam was detected.
+
 Now finish setup:
 
 - Set the index in the [admin center](http://localhost/#/admin/config) (Default password: 0000), config, tab backends.

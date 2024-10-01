@@ -336,12 +336,12 @@
     "retry_capture": 3,
     "countdown_camera_capture_offset": 0.2,
     "group_main": {
-      "active_backend": "WebcamCv2",
+      "active_backend": "VirtualCamera",
       "virtualcamera": {
         "emulate_camera_delay_still_capture": 0.2
       },
       "webcamcv2": {
-        "device_index": 2,
+        "device_index": 0,
         "CAM_RESOLUTION_WIDTH": 1920,
         "CAM_RESOLUTION_HEIGHT": 1080,
         "CAMERA_TRANSFORM_HFLIP": false,
