@@ -158,6 +158,13 @@ cython_debug/
 possible-dream-436907-s2-15ffd7fa994a.json
 libjpeg-turbo64
 ffmpeg-7.0.2-full_build
+qr_code_folder/*.png
+
+photobooth-data/log
+photobooth-data/media
+photobooth-data/recycle
+photobooth-data/tmp
+photobooth-data/userdata
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can

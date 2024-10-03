@@ -1,0 +1,1 @@
+contain QRcode images
