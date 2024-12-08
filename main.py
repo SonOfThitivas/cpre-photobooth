@@ -1,20 +1,24 @@
 # ref: https://ragug.medium.com/how-to-upload-files-using-the-google-drive-api-in-python-ebefdfd63eab
 # Watchdog: https://github.com/gorakhargosh/watchdog
 
-import os
+import os, multiprocessing, qrcode, time
 from google.oauth2 import service_account
 from googleapiclient.discovery import build, MediaFileUpload
 from googleapiclient.errors import HttpError
 from datetime import datetime
-import qrcode
-import time
 from watchdog.events import FileSystemEvent, FileSystemEventHandler, FileCreatedEvent
 from watchdog.observers import Observer
 from PIL import Image
+from dotenv import load_dotenv
+
+# Load the .env file
+load_dotenv()
+service_account_file_path = os.getenv("SERVICE_ACCOUNT_FILE_PATH")
+main_folder_id = os.getenv("MAIN_FOLDER_ID")
 
 # Define the Google Drive API scopes and service account file path
 SCOPES = ['https://www.googleapis.com/auth/drive']
-SERVICE_ACCOUNT_FILE = "possible-dream-436907-s2-15ffd7fa994a.json"
+SERVICE_ACCOUNT_FILE = service_account_file_path
 
 # Create credentials using the service account file
 credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
@@ -22,16 +26,16 @@ credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCO
 # Build the Google Drive service
 drive_service = build('drive', 'v3', credentials=credentials)
 
-new_pics_paths = []
+new_pics_paths = []                                             # contain images file paths
 
-class MyEventHandler(FileSystemEventHandler):
+class MyEventHandler(FileSystemEventHandler):                   # Track the files that created in the folder
     def on_any_event(self, event: FileSystemEvent) -> None:
         print(event)
         print(event.src_path)
         new_pics_paths.append(event.src_path)
-        print(len(new_pics_paths))
+        # print(len(new_pics_paths))
 
-def create_folder(folder_name, parent_folder_id=None):
+def create_folder(folder_name, parent_folder_id=None):          # Create new specific folders
     """Create a folder in Google Drive and return its ID."""
     folder_metadata = {
         'name': folder_name,
@@ -47,7 +51,7 @@ def create_folder(folder_name, parent_folder_id=None):
     print(f'Created Folder ID: {created_folder["id"]}')
     return created_folder["id"]
 
-def upload_file(file_path, indx, parent_folder_id=None):
+def upload_file(file_path, indx, parent_folder_id=None):        # Upload images to google drive
     """Create a folder in Google Drive and return its ID."""
     file_metadata = {
         'name': indx,
@@ -59,7 +63,7 @@ def upload_file(file_path, indx, parent_folder_id=None):
     print(f'Created File ID: {created_file["id"]}')
     return created_file["id"]
 
-def share_file(real_file_id):
+def share_file(real_file_id):                                   # Permission Modification
     """Batch permission modification.
     Args:
         real_file_id: file Id
@@ -109,16 +113,21 @@ def share_file(real_file_id):
 
     return ids
 
-def qrcode_generate(id):
+def qrcode_generate(id, timestamp):                                    # QRcode Generator by shared link
     img = qrcode.make(id)
-    file_name = f"./qr_code_folder/{timestamp_str}.png"
+    file_name = f"./qr_code_folder/{timestamp}.png"
     img.save(file_name)
     print("QRcode was generated")
-    
-    img_gen = Image.open(file_name)
-    img_gen.show()
+    time.sleep(5) 
+    img = Image.open(file_name)
+    img.show()
 
 if __name__ == '__main__':
+    # important variables
+    n_pic = 0
+    start = False
+    end = False
+    
     # file created detector
     event_handler = MyEventHandler()
     observer = Observer()
@@ -127,33 +136,45 @@ if __name__ == '__main__':
     
     try:
         while True:
+            time.sleep(0.05)
+            
             # timestamp
             timestamp = datetime.now()
             timestamp_str = timestamp.strftime("%d-%m-%Y_%H-%M-%S")
-            
-            time.sleep(1)
-            
-            # 5 pics were stored
-            if len(new_pics_paths) == 5:
-                tmp = new_pics_paths.copy()
-                new_pics_paths.clear()
                 
+            # First picture created
+            if( start == False) and (end == False) and len(new_pics_paths) > 0:
+                start = True                # start condition
                 # Create folder
-                folder_id = create_folder(timestamp_str, "1Yg6dNUy126viCItc3r0pTJu_SjdcutBw")
+                folder_id = create_folder(timestamp_str, main_folder_id)
                 print(folder_id, type(folder_id))
-                
-                # Upload images
-                for i, src_path in enumerate(tmp):
-                    upload_file(src_path, i+1, folder_id)
-                
+                # modify permision to anyone
                 print(share_file(folder_id))
-
                 # Shared link
                 shared_link = f"https://drive.google.com/drive/folders/{folder_id}?usp=sharing"
                 print(shared_link)
                 
-                # QR code generator
-                qrcode_generate(shared_link)
+            elif (start == True) and (end == False):
+                if n_pic == 5:                      # end condition
+                    end = True
+                
+                if len(new_pics_paths) > 0:         # new picture arrives
+                    multiprocessing.Process(
+                        target=upload_file,
+                        args=(new_pics_paths.pop(), n_pic+1, folder_id)).start()
+                        
+                    n_pic += 1
+                    
+            elif (start == True) and (end == True):
+                n_pic = 0                           # reset condition
+                start = False
+                end = False
+                print("Done!!!!")
+                # show qrcode
+                multiprocessing.Process(
+                    target=qrcode_generate,
+                    args=(shared_link, timestamp_str)
+                ).start()
         
     finally:
         observer.stop()

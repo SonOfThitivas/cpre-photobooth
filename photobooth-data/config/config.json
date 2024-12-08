@@ -2,7 +2,7 @@
   "common": {
     "admin_password": "0000",
     "logging_level": "DEBUG",
-    "webserver_bind_ip": "0.0.0.0",
+    "webserver_bind_ip": "localhost",
     "webserver_port": 8000,
     "users_delete_to_recycle_dir": true
   },
@@ -54,8 +54,8 @@
       {
         "name": "default collage settings",
         "jobcontrol": {
-          "countdown_capture": 5.0,
-          "countdown_capture_second_following": 5.0,
+          "countdown_capture": 2.0,
+          "countdown_capture_second_following": 2.0,
           "ask_approval_each_capture": false,
           "approve_autoconfirm_timeout": 15.0,
           "gallery_hide_individual_images": false
@@ -108,8 +108,8 @@
           "canvas_fill_background_enable": false,
           "canvas_fill_background_color": "green",
           "canvas_img_background_enable": true,
-          "canvas_img_background_file": "..\\img\\template05.png",
-          "canvas_img_front_enable": true,
+          "canvas_img_background_file": "..\\img\\template03.png",
+          "canvas_img_front_enable": false,
           "canvas_img_front_file": "..\\img\\template05s.png",
           "canvas_texts_enable": false,
           "canvas_texts": [
@@ -258,7 +258,7 @@
     "shareservice_url": "https://photobooth-app.org/extras/shareservice-landing/",
     "shareservice_apikey": "changedefault!",
     "shareservice_share_original": false,
-    "share_custom_qr_url": "http://localhost/media/processed/full/{filename}"
+    "share_custom_qr_url": "localhost"
   },
   "filetransfer": {
     "enabled": false,
@@ -285,7 +285,7 @@
     "show_admin_on_frontpage": true,
     "show_automatic_slideshow_timeout": 300,
     "livestream_mirror_effect": true,
-    "FRONTPAGE_TEXT": "<div class=\"fixed-center text-h2 text-weight-bold text-center text-white\" style=\"text-shadow: 4px 4px 4px #666;\">Welcome to ECE! <br>⚡📷💻</div>",
+    "FRONTPAGE_TEXT": "<div class=\"fixed-center text-h2 text-weight-bold text-center text-white\" style=\"text-shadow: 4px 4px 4px #666;\"> <br></div>",
     "TAKEPIC_MSG_TIME": 1.0,
     "TAKEPIC_MSG_TEXT": "😃",
     "AUTOCLOSE_NEW_ITEM_ARRIVED": 60,
@@ -376,7 +376,7 @@
   },
   "hardwareinputoutput": {
     "keyboard_input_enabled": false,
-    "wled_enabled": true,
+    "wled_enabled": false,
     "wled_serial_port": "COM3",
     "gpio_enabled": false,
     "gpio_pin_shutdown": 17,
