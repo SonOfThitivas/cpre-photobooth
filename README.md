@@ -40,7 +40,7 @@ SERVICE_ACCOUNT_FILE_PATH = {your JSON file path}
 ```
 
 ### 📁 Start
-- Open two terminals and execute these to start.\
+- Open two terminals and execute these to start. 
 
 Terminal 1 (photoboot-data)
 ```bash
@@ -48,10 +48,11 @@ Terminal 1 (photoboot-data)
 cd photobooth-data
 photobooth.exe
 ```
-open browser with [localhost:8000](localhost:8000).\
+open browser with [localhost:8000](localhost:8000). 
 
 Terminal 2 (main.py)
 ```bash
+.\venv\Scripts\activate
 py main.py
 ```
 For more information
