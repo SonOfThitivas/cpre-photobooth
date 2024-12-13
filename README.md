@@ -55,10 +55,15 @@ Terminal 2 (main.py)
 .\venv\Scripts\activate
 py main.py
 ```
+## Gallery
+<img src="https://github.com/user-attachments/assets/ad9175a6-ff74-4718-ab42-42a0795a9305" width="720" height="480" />
+<img src="https://github.com/user-attachments/assets/58e4fcdf-985a-4a1d-a69a-211f600a8d1e" width="720" height="480" />
+<img src="https://github.com/user-attachments/assets/4a3883d6-90f3-4983-9eea-c7e68bc5a336" width="720" height="480" />
+<img src="https://github.com/user-attachments/assets/5ec3a248-c8c7-49f9-bfab-4f43195e7f55" width="720" height="480" />
+<img src="https://github.com/user-attachments/assets/7decee47-9dad-471e-8894-c6d984953809" width="720" height="480" />
+
 For more information
-
 ## 📖 Reference
-
 photobooth-app
 - [github](https://github.com/photobooth-app/photobooth-app.git)
 - [Documentation](https://photobooth-app.org/)
