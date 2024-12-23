@@ -170,6 +170,8 @@ if __name__ == '__main__':
                     target=qrcode_generate,
                     args=(shared_link, timestamp_str)
                 ).start()
+                
+                n_pic = 0
         
     finally:
         observer.stop()
