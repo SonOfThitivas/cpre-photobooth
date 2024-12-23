@@ -69,8 +69,8 @@
           "canvas_height": 1280,
           "merge_definition": [
             {
-              "pos_x": 267,
-              "pos_y": 330,
+              "pos_x": 271,
+              "pos_y": 307,
               "width": 661,
               "height": 373,
               "rotate": 0,
@@ -78,8 +78,8 @@
               "filter": "original"
             },
             {
-              "pos_x": 983,
-              "pos_y": 330,
+              "pos_x": 987,
+              "pos_y": 307,
               "width": 661,
               "height": 373,
               "rotate": 0,
@@ -87,8 +87,8 @@
               "filter": "original"
             },
             {
-              "pos_x": 267,
-              "pos_y": 792,
+              "pos_x": 271,
+              "pos_y": 769,
               "width": 661,
               "height": 373,
               "rotate": 0,
@@ -96,8 +96,8 @@
               "filter": "original"
             },
             {
-              "pos_x": 983,
-              "pos_y": 792,
+              "pos_x": 987,
+              "pos_y": 769,
               "width": 661,
               "height": 373,
               "rotate": 0,
@@ -108,9 +108,9 @@
           "canvas_fill_background_enable": false,
           "canvas_fill_background_color": "green",
           "canvas_img_background_enable": true,
-          "canvas_img_background_file": "..\\img\\template03.png",
-          "canvas_img_front_enable": false,
-          "canvas_img_front_file": "..\\img\\template05s.png",
+          "canvas_img_background_file": "..\\img\\9.png",
+          "canvas_img_front_enable": true,
+          "canvas_img_front_file": "..\\img\\10.png",
           "canvas_texts_enable": false,
           "canvas_texts": [
             {

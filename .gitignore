@@ -166,6 +166,8 @@ photobooth-data/recycle
 photobooth-data/tmp
 photobooth-data/userdata
 
+photobooth-data/config/config.json_backup*
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore

@@ -1,7 +1,7 @@
 # ref: https://ragug.medium.com/how-to-upload-files-using-the-google-drive-api-in-python-ebefdfd63eab
 # Watchdog: https://github.com/gorakhargosh/watchdog
 
-import os, multiprocessing, qrcode, time
+import os, multiprocessing, qrcode, time, subprocess
 from google.oauth2 import service_account
 from googleapiclient.discovery import build, MediaFileUpload
 from googleapiclient.errors import HttpError
@@ -126,7 +126,6 @@ if __name__ == '__main__':
     # important variables
     n_pic = 0
     start = False
-    end = False
     
     # file created detector
     event_handler = MyEventHandler()
@@ -143,7 +142,7 @@ if __name__ == '__main__':
             timestamp_str = timestamp.strftime("%d-%m-%Y_%H-%M-%S")
                 
             # First picture created
-            if( start == False) and (end == False) and len(new_pics_paths) > 0:
+            if( start == False) and len(new_pics_paths) > 0:
                 start = True                # start condition
                 # Create folder
                 folder_id = create_folder(timestamp_str, main_folder_id)
@@ -153,23 +152,19 @@ if __name__ == '__main__':
                 # Shared link
                 shared_link = f"https://drive.google.com/drive/folders/{folder_id}?usp=sharing"
                 print(shared_link)
+                    
+            elif (start == True) and len(new_pics_paths) == 5:
+                time.sleep(1)
                 
-            elif (start == True) and (end == False):
-                if n_pic == 5:                      # end condition
-                    end = True
-                
-                if len(new_pics_paths) > 0:         # new picture arrives
+                for i in range(len(new_pics_paths)):
                     multiprocessing.Process(
                         target=upload_file,
                         args=(new_pics_paths.pop(), n_pic+1, folder_id)).start()
-                        
                     n_pic += 1
-                    
-            elif (start == True) and (end == True):
-                n_pic = 0                           # reset condition
+                
                 start = False
-                end = False
                 print("Done!!!!")
+
                 # show qrcode
                 multiprocessing.Process(
                     target=qrcode_generate,
