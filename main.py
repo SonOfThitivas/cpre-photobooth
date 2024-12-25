@@ -159,7 +159,7 @@ if __name__ == '__main__':
                 for i in range(len(new_pics_paths)):
                     multiprocessing.Process(
                         target=upload_file,
-                        args=(new_pics_paths.pop(), n_pic+1, folder_id)).start()
+                        args=(new_pics_paths.pop(), f"{n_pic+1}.png", folder_id)).start()
                     n_pic += 1
                 
                 start = False
