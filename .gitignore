@@ -160,6 +160,7 @@ libjpeg-turbo64
 ffmpeg-7.0.2-full_build
 qr_code_folder/*.png
 
+photobooth-data/database
 photobooth-data/log
 photobooth-data/media
 photobooth-data/recycle
@@ -168,6 +169,8 @@ photobooth-data/userdata
 
 photobooth-data/config/config.json_backup*
 
+fix.py
+temp
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore

@@ -1,7 +1,7 @@
 # ref: https://ragug.medium.com/how-to-upload-files-using-the-google-drive-api-in-python-ebefdfd63eab
 # Watchdog: https://github.com/gorakhargosh/watchdog
 
-import os, multiprocessing, qrcode, time, subprocess
+import os, multiprocessing, qrcode, time
 from google.oauth2 import service_account
 from googleapiclient.discovery import build, MediaFileUpload
 from googleapiclient.errors import HttpError
@@ -130,7 +130,7 @@ if __name__ == '__main__':
     # file created detector
     event_handler = MyEventHandler()
     observer = Observer()
-    observer.schedule(event_handler, "./photobooth-data/media/processed/full", recursive=True, event_filter=[FileCreatedEvent])
+    observer.schedule(event_handler, "./photobooth-data/media/processed_full", recursive=True, event_filter=[FileCreatedEvent])
     observer.start()
     
     try:
@@ -153,7 +153,7 @@ if __name__ == '__main__':
                 shared_link = f"https://drive.google.com/drive/folders/{folder_id}?usp=sharing"
                 print(shared_link)
                     
-            elif (start == True) and len(new_pics_paths) == 5:
+            elif (start == True) and len(new_pics_paths) == 2:
                 time.sleep(1)
                 
                 for i in range(len(new_pics_paths)):
