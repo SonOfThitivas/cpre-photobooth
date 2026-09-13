@@ -16,6 +16,12 @@ load_dotenv()
 service_account_file_path = os.getenv("SERVICE_ACCOUNT_FILE_PATH")
 main_folder_id = os.getenv("MAIN_FOLDER_ID")
 
+# Pipeline coupling to photobooth-app's output (override in .env per app version/collage).
+# WATCH_DIR must be the folder photobooth-app writes finished images into.
+# PICS_PER_SESSION must equal the number of images produced per capture session.
+watch_dir = os.getenv("WATCH_DIR", "./photobooth-data/media/processed_full")
+pics_per_session = int(os.getenv("PICS_PER_SESSION", "2"))
+
 # Define the Google Drive API scopes and service account file path
 SCOPES = ['https://www.googleapis.com/auth/drive']
 SERVICE_ACCOUNT_FILE = service_account_file_path
@@ -130,7 +136,7 @@ if __name__ == '__main__':
     # file created detector
     event_handler = MyEventHandler()
     observer = Observer()
-    observer.schedule(event_handler, "./photobooth-data/media/processed_full", recursive=True, event_filter=[FileCreatedEvent])
+    observer.schedule(event_handler, watch_dir, recursive=True, event_filter=[FileCreatedEvent])
     observer.start()
     
     try:
@@ -153,7 +159,7 @@ if __name__ == '__main__':
                 shared_link = f"https://drive.google.com/drive/folders/{folder_id}?usp=sharing"
                 print(shared_link)
                     
-            elif (start == True) and len(new_pics_paths) == 2:
+            elif (start == True) and len(new_pics_paths) == pics_per_session:
                 time.sleep(1)
                 
                 for i in range(len(new_pics_paths)):
