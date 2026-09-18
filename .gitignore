@@ -178,8 +178,9 @@ secrets/
 *service_account*.json
 .env
 
-# Live photobooth-app runtime config (machine-specific; config.json holds admin_password + session secret)
-photobooth-data/config/config.json
+# Live photobooth-app runtime config. config.json IS tracked (shared booth
+# settings; note it contains admin_password + session secret). Other runtime
+# configs stay ignored — they can hold rclone/plugin credentials.
 photobooth-data/config/plugin_synchronizer.json*
 photobooth-data/config/rclone.conf
 

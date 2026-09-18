@@ -40,7 +40,11 @@ python -m venv venv
 python -m pip install -r requirements.txt
 ```
 
-Put your **`client_secret.json`** (the Desktop OAuth client) in the repo root, then create **`.env`**:
+Put your **`client_secret.json`** (the Desktop OAuth client) in the repo root, then create **`.env`** — copy `.env.example` and fill in your folder id:
+
+```bash
+cp .env.example .env
+```
 
 ```.env
 MAIN_FOLDER_ID={your google drive folder id}
@@ -48,7 +52,7 @@ MAIN_FOLDER_ID={your google drive folder id}
 CLIENT_SECRET_FILE=client_secret.json
 TOKEN_FILE=token.json
 WATCH_DIR=./photobooth-data/media/processed_full
-PICS_PER_SESSION=2
+SESSION_QUIET_SECONDS=3
 ```
 
 `token.json`, `client_secret.json`, and `.env` are **gitignored** — they are secrets. Never commit them.
@@ -57,9 +61,24 @@ PICS_PER_SESSION=2
 
 Run `main.py` once; a browser opens → sign in → **Allow**. That writes `token.json`. (If you see "Google hasn't verified this app", choose **Advanced → Go to … → Allow** — it's your own client.)
 
-### Other booths
+### Running on another machine (new booth)
 
-Copy `token.json` to each machine (same repo layout). They refresh silently — no browser needed.
+A booth has **two** configs, with different portability:
+
+**1. The uploader (`main.py`) — fully portable.** On the new machine, set up the venv (see [Setup](#setup)) and copy over just:
+
+- `token.json` — makes the machine upload as *your* Google user with **no browser step** (it already contains the refresh token + client id/secret). All booths then upload into the same Drive folder.
+- `.env` — `MAIN_FOLDER_ID` is shared across booths.
+
+You do **not** need `client_secret.json` on the extra machines once `token.json` exists.
+
+**2. The photobooth-app config (`photobooth-data/config/config.json`) — portable except the camera.** Copy your `config.json` to reuse all the creative settings (collage/merge definitions, canvas sizes, gallery, sharing, UI). Then fix the **one machine-specific field**:
+
+- `cameras.group_backends[].backend_config.device_identifier` — this names the *specific* camera on your machine (e.g. `"Integrated Webcam"`). On a different machine it must match that machine's camera, or capture won't start. Set it in photobooth-app's admin UI (it lists the available cameras), or edit `config.json` directly.
+- If the new machine uses a different camera *type* (Raspberry Pi cam, DSLR/gphoto2), also change `backend_type` accordingly.
+- The `hardwareinputoutput.gpio_*` (Pi pins) and `misc.cmd_shutdown`/`cmd_reboot` (Linux commands) only matter on those platforms; leave them otherwise. Regenerating `misc.secret` per install is optional but tidy.
+
+> `config.json`, `token.json`, `client_secret.json`, and `.env` are all **gitignored** — copy them between machines manually (USB / secure transfer), never via the public repo.
 
 ## Run
 
@@ -84,7 +103,7 @@ Take a collage capture; `main.py` creates the Drive sub-folder, uploads the imag
 ## Tuning to your app version / collage
 
 - `WATCH_DIR` — the folder photobooth-app writes finished images to (default `media/processed_full`, unchanged in v9).
-- `PICS_PER_SESSION` — number of image files a session drops into that folder (2 individual + composite varies by collage). Set it to match a real capture; a wrong value means sessions never fire or fire early.
+- `SESSION_QUIET_SECONDS` — how long the watcher waits with no new file before treating a burst as one finished session (default `3`). A collage session writes several files (each individual shot **plus** the composite) over a second or two; the debounce groups them automatically, so you no longer hard-code a per-session count. Raise it only if a slow machine uploads before the collage file lands.
 
 ## Other branches
 

@@ -5,87 +5,67 @@
     "users_delete_to_recycle_dir": true
   },
   "actions": {
-    "image": [
-      {
-        "name": "default action",
-        "jobcontrol": {
-          "countdown_capture": 2.0
-        },
-        "processing": {
-          "image_filter": "original",
-          "fill_background_enable": false,
-          "fill_background_color": "blue",
-          "img_background_enable": true,
-          "img_background_file": "../img/ieecon01.png",
-          "img_frame_enable": true,
-          "img_frame_file": "userdata/frames/frame_image_photobooth-app.png",
-          "texts_enable": true,
-          "texts": [
-            {
-              "text": "Visit photobooth-app.org and build yours!",
-              "pos_x": 1300,
-              "pos_y": 1250,
-              "rotate": 0,
-              "font_size": 30,
-              "font": "userdata/fonts/Roboto-Bold.ttf",
-              "color": "#333"
-            }
-          ]
-        },
-        "trigger": {
-          "ui_trigger": {
-            "show_button": false,
-            "title": "Image",
-            "icon": "photo_camera",
-            "use_custom_color": false,
-            "custom_color": "#196cb0"
-          },
-          "keyboard_trigger": {
-            "keycode": "i"
-          },
-          "gpio_trigger": {
-            "pin": "27",
-            "trigger_on": "pressed"
-          }
-        }
-      }
-    ],
+    "image": [],
     "collage": [
       {
         "name": "default action",
         "jobcontrol": {
-          "countdown_capture": 5.0,
+          "countdown_capture": 1.0,
           "countdown_capture_second_following": 1.0,
           "ask_approval_each_capture": false,
-          "approve_autoconfirm_timeout": 30.0,
+          "approve_autoconfirm_timeout": 15.0,
           "show_individual_captures_in_gallery": true
         },
         "processing": {
+          "capture_remove_background": false,
           "capture_fill_background_enable": false,
-          "capture_fill_background_color": "blue",
+          "capture_fill_background_color": "white",
           "capture_img_background_enable": false,
-          "capture_img_background_file": "",
+          "capture_img_background_file": null,
           "canvas_width": 1920,
           "canvas_height": 1280,
           "merge_definition": [
             {
-              "description": "middle",
-              "pos_x": 357,
-              "pos_y": 565,
-              "width": 1207,
-              "height": 681,
+              "description": "left",
+              "pos_x": 160,
+              "pos_y": 220,
+              "pos_z": 0,
+              "width": 510,
+              "height": 725,
               "rotate": 0,
-              "predefined_image": "",
+              "predefined_image": null,
+              "image_filter": "FilterPilgram2.earlybird"
+            },
+            {
+              "description": "middle predefined",
+              "pos_x": 705,
+              "pos_y": 66,
+              "pos_z": 0,
+              "width": 510,
+              "height": 725,
+              "rotate": 0,
+              "predefined_image": "userdata\\demoassets\\predefined_images\\photobooth-collage-predefined-image.png",
               "image_filter": "original"
+            },
+            {
+              "description": "right",
+              "pos_x": 1245,
+              "pos_y": 220,
+              "pos_z": 0,
+              "width": 510,
+              "height": 725,
+              "rotate": 0,
+              "predefined_image": null,
+              "image_filter": "FilterPilgram2.reyes"
             }
           ],
           "canvas_fill_background_enable": false,
-          "canvas_fill_background_color": "green",
-          "canvas_img_background_enable": true,
-          "canvas_img_background_file": "userdata/ieecon01.png",
-          "canvas_img_front_enable": false,
-          "canvas_img_front_file": "userdata/frames/pixabay-poster-2871536_1920.png",
-          "canvas_texts_enable": false,
+          "canvas_fill_background_color": "#2e6f40",
+          "canvas_img_background_enable": false,
+          "canvas_img_background_file": null,
+          "canvas_img_front_enable": true,
+          "canvas_img_front_file": "userdata\\demoassets\\frames\\pixabay-poster-2871536_1920.png",
+          "canvas_texts_enable": true,
           "canvas_texts": [
             {
               "text": "Have a nice day :)",
@@ -93,7 +73,7 @@
               "pos_y": 1100,
               "rotate": 1,
               "font_size": 40,
-              "font": "userdata/fonts/Roboto-Bold.ttf",
+              "font": "userdata\\demoassets\\fonts\\Roboto-Bold.ttf",
               "color": "#333"
             }
           ]
@@ -101,8 +81,8 @@
         "trigger": {
           "ui_trigger": {
             "show_button": true,
-            "title": "Take a pic!",
-            "icon": "photo_camera",
+            "title": "Collage",
+            "icon": "auto_awesome_mosaic",
             "use_custom_color": false,
             "custom_color": "#196cb0"
           },
@@ -116,136 +96,62 @@
         }
       }
     ],
-    "animation": [
-      {
-        "name": "default action",
-        "jobcontrol": {
-          "countdown_capture": 2.0,
-          "countdown_capture_second_following": 0.5,
-          "ask_approval_each_capture": false,
-          "approve_autoconfirm_timeout": 15.0,
-          "show_individual_captures_in_gallery": false
-        },
-        "processing": {
-          "canvas_width": 1500,
-          "canvas_height": 900,
-          "merge_definition": [
-            {
-              "duration": 2000,
-              "predefined_image": "",
-              "image_filter": "FilterPilgram2.crema"
-            },
-            {
-              "duration": 2000,
-              "predefined_image": "",
-              "image_filter": "FilterPilgram2.inkwell"
-            },
-            {
-              "duration": 2000,
-              "predefined_image": "",
-              "image_filter": "original"
-            },
-            {
-              "duration": 2000,
-              "predefined_image": "",
-              "image_filter": "original"
-            },
-            {
-              "duration": 4000,
-              "predefined_image": "userdata/predefined_images/photobooth-gif-animation-predefined-image.png",
-              "image_filter": "original"
-            }
-          ]
-        },
-        "trigger": {
-          "ui_trigger": {
-            "show_button": false,
-            "title": "Animation",
-            "icon": "gif_box",
-            "use_custom_color": false,
-            "custom_color": "#196cb0"
-          },
-          "keyboard_trigger": {
-            "keycode": "g"
-          },
-          "gpio_trigger": {
-            "pin": "24",
-            "trigger_on": "pressed"
-          }
-        }
-      }
-    ],
-    "video": [
-      {
-        "name": "default action",
-        "jobcontrol": {
-          "countdown_capture": 2.0
-        },
-        "processing": {
-          "video_duration": 5,
-          "boomerang": true,
-          "video_framerate": 15
-        },
-        "trigger": {
-          "ui_trigger": {
-            "show_button": false,
-            "title": "Video",
-            "icon": "movie",
-            "use_custom_color": false,
-            "custom_color": "#196cb0"
-          },
-          "keyboard_trigger": {
-            "keycode": "v"
-          },
-          "gpio_trigger": {
-            "pin": "25",
-            "trigger_on": "pressed"
-          }
-        }
-      }
-    ],
-    "multicamera": [
-      {
-        "name": "default action",
-        "jobcontrol": {
-          "countdown_capture": 2.0,
-          "show_individual_captures_in_gallery": false
-        },
-        "processing": {
-          "canvas_width": 1500,
-          "canvas_height": 900,
-          "duration": 125,
-          "image_filter": "original"
-        },
-        "trigger": {
-          "ui_trigger": {
-            "show_button": false,
-            "title": "Wigglegram",
-            "icon": "burst_mode",
-            "use_custom_color": false,
-            "custom_color": "#196cb0"
-          },
-          "keyboard_trigger": {
-            "keycode": "w"
-          },
-          "gpio_trigger": {
-            "pin": "12",
-            "trigger_on": "pressed"
-          }
-        }
-      }
-    ]
+    "animation": [],
+    "video": [],
+    "multicamera": []
   },
   "share": {
-    "sharing_enabled": false,
-    "number_direct_access_buttons": 1,
+    "sharing_enabled": true,
     "actions": [
       {
-        "name": "default print settings",
-        "handles_images_only": false,
+        "name": "Printing",
+        "handles_images_only": true,
         "processing": {
-          "share_command": "echo {filename} {copies}",
+          "share_command": "echo printing {filename} on {printer_name} media_type={media_type} action_config_name={action_config_name} copies={copies}",
+          "printer_name": "PDF",
+          "check_if_printer_is_idle": false,
           "ask_user_for_parameter_input": false,
+          "parameters_dialog_caption": "Make your choice!",
+          "parameters_dialog_action_icon": "print",
+          "parameters_dialog_action_label": "GO",
+          "parameters": [
+            {
+              "key": "copies",
+              "label": "Copies",
+              "ui_type": "int",
+              "default": "1",
+              "valid_min": "1",
+              "valid_max": "3"
+            }
+          ],
+          "share_blocked_time": 3,
+          "max_shares": 0
+        },
+        "trigger": {
+          "ui_trigger": {
+            "show_button": true,
+            "title": "Direct Print",
+            "icon": "print",
+            "use_custom_color": false,
+            "custom_color": "#196cb0"
+          },
+          "keyboard_trigger": {
+            "keycode": "p"
+          },
+          "gpio_trigger": {
+            "pin": "23",
+            "trigger_on": "pressed"
+          }
+        }
+      },
+      {
+        "name": "Printing copies",
+        "handles_images_only": true,
+        "processing": {
+          "share_command": "echo printing {filename} on {printer_name} media_type={media_type} action_config_name={action_config_name} copies={copies}",
+          "printer_name": "PDF",
+          "check_if_printer_is_idle": false,
+          "ask_user_for_parameter_input": true,
           "parameters_dialog_caption": "How many copies?",
           "parameters_dialog_action_icon": "print",
           "parameters_dialog_action_label": "GO",
@@ -265,38 +171,32 @@
         "trigger": {
           "ui_trigger": {
             "show_button": true,
-            "title": "Print",
+            "title": "Print Copies",
             "icon": "print",
             "use_custom_color": false,
             "custom_color": "#196cb0"
           },
           "keyboard_trigger": {
-            "keycode": "p"
+            "keycode": ""
           },
           "gpio_trigger": {
-            "pin": "23",
+            "pin": "",
             "trigger_on": "pressed"
           }
         }
       },
       {
-        "name": "default print settings",
-        "handles_images_only": true,
+        "name": "Mailing action",
+        "handles_images_only": false,
         "processing": {
-          "share_command": "echo {filename} {copies} {mail}",
+          "share_command": "echo {filename} media_type={media_type} action_config_name={action_config_name} to mail {mail}",
+          "printer_name": "PDF",
+          "check_if_printer_is_idle": false,
           "ask_user_for_parameter_input": true,
-          "parameters_dialog_caption": "Print and mail...",
+          "parameters_dialog_caption": "E-Mail your image...",
           "parameters_dialog_action_icon": "mail",
-          "parameters_dialog_action_label": "send",
+          "parameters_dialog_action_label": "Send",
           "parameters": [
-            {
-              "key": "copies",
-              "label": "Copies",
-              "ui_type": "int",
-              "default": "1",
-              "valid_min": "1",
-              "valid_max": "3"
-            },
             {
               "key": "mail",
               "label": "E-Mail address",
@@ -312,46 +212,35 @@
         "trigger": {
           "ui_trigger": {
             "show_button": true,
-            "title": "Print",
-            "icon": "print",
+            "title": "Send Mail",
+            "icon": "mail",
             "use_custom_color": false,
             "custom_color": "#196cb0"
           },
           "keyboard_trigger": {
-            "keycode": "p"
+            "keycode": ""
           },
           "gpio_trigger": {
-            "pin": "23",
+            "pin": "",
             "trigger_on": "pressed"
           }
         }
       }
     ]
   },
-  "qrshare": {
-    "enabled": false,
-    "shareservice_url": "https://photobooth-app.org/extras/shareservice-landing/",
-    "shareservice_apikey": "changedefault!",
-    "share_custom_qr_url": "http://localhost:8000/media/full/{identifier}"
-  },
-  "filetransfer": {
-    "enabled": false,
-    "target_folder_name": "photobooth"
-  },
   "mediaprocessing": {
-    "HIRES_STILL_QUALITY": 90,
     "full_still_length": 1500,
     "preview_still_length": 1200,
     "thumbnail_still_length": 400,
     "video_bitrate": 3000,
-    "video_compatibility_mode": false,
-    "removechromakey_enable": false,
-    "removechromakey_keycolor": 110,
-    "removechromakey_tolerance": 10
+    "video_compatibility_mode": true,
+    "remove_background_model": "modnet",
+    "fileformat_animations": "webp",
+    "fileformat_multicamera": "mp4"
   },
   "uisettings": {
-    "PRIMARY_COLOR": "#7acc95",
-    "SECONDARY_COLOR": "#006479",
+    "PRIMARY_COLOR": "#196cb0",
+    "SECONDARY_COLOR": "#4283b8",
     "theme": "system",
     "show_gallery_on_frontpage": true,
     "show_admin_on_frontpage": true,
@@ -362,23 +251,29 @@
     "enable_livestream_when_idle": true,
     "enable_livestream_when_active": true,
     "livestream_mirror_effect": true,
-    "livestream_blurredbackground": false,
-    "enable_livestream_frameoverlay": false,
-    "livestream_frameoverlay_image": "/userdata/frames/frame_image_photobooth-app.png",
-    "FRONTPAGE_TEXT": "<div class=\"fixed-center text-h2 text-weight-bold text-center text-white\" style=\"text-shadow: 4px 4px 4px #666;\"> <br></div>",
+    "livestream_blurredbackground": true,
+    "livestream_blurredbackground_high_framerate": false,
+    "livestream_frameoverlay": {
+      "enable": true,
+      "image": "userdata\\demoassets\\frames\\frame_image_photobooth-app.png",
+      "mirror_effect": true
+    },
+    "FRONTPAGE_TEXT": "<div class=\"fixed-center text-h2 text-weight-bold text-center text-white\" style=\"text-shadow: 4px 4px 4px #666;\">Hey!<br>Let's take some pictures! <br>📷</div>",
     "TAKEPIC_MSG_TIME": 0.5,
     "TAKEPIC_MSG_TEXT": "😃",
     "AUTOCLOSE_NEW_ITEM_ARRIVED": 30,
     "GALLERY_EMPTY_MSG": "<div class=\"fixed-center text-h2 text-weight-bold text-center text-white\" style=\"text-shadow: 4px 4px 4px #666;\">Empty, Zero, Nada! 🤷‍♂️<br>Let's take some pictures! <br>📷💕</div>",
-    "gallery_show_qrcode": false,
+    "gallery_show_qrcode": true,
     "qrcode_text_above": "👋 Download your photo!",
     "qrcode_text_below": "Scan above code with your phone.",
-    "gallery_show_filter": false,
-    "gallery_show_download": false,
-    "gallery_show_delete": false,
-    "gallery_show_shareprint": false
+    "qrcode_link_codes": false,
+    "gallery_show_filter": true,
+    "gallery_show_download": true,
+    "gallery_show_delete": true,
+    "gallery_show_shareprint": true,
+    "itempresenter_show_trigger_last_action_again": true
   },
-  "backends": {
+  "cameras": {
     "enable_livestream": true,
     "retry_capture": 3,
     "countdown_camera_capture_offset": 0.2,
@@ -388,34 +283,19 @@
     "group_backends": [
       {
         "enabled": true,
-        "selected_device": "WebcamCv2",
-        "virtualcamera": {
+        "description": "virtual camera",
+        "backend_config": {
           "orientation": "1: 0°",
-          "framerate": 15,
-          "emulate_hires_static_still": false,
-          "emulate_multicam_capture_devices": 4
-        },
-        "webcamcv2": {
-          "orientation": "1: 0°",
-          "device_index": 0,
-          "CAM_RESOLUTION_WIDTH": 10000,
-          "CAM_RESOLUTION_HEIGHT": 10000,
-          "framerate": 30
-        },
-        "wigglecam": {
-          "keep_node_copy": false,
-          "index_cam_stills": 0,
-          "index_cam_video": 0,
-          "nodes": [
-            {
-              "description": "TestNode",
-              "base_url": "http://127.0.0.1:8010/"
-            }
-          ]
-        },
-        "digicamcontrol": {
-          "orientation": "1: 0°",
-          "base_url": "http://127.0.0.1:5513"
+          "camera_standby_when_inactive": true,
+          "camera_standby_when_inactive_time": 30,
+          "backend_type": "WebcamPyav",
+          "device_identifier": "Integrated Webcam",
+          "pixel_format": "auto",
+          "cam_resolution_width": 1280,
+          "cam_resolution_height": 720,
+          "cam_framerate": 0,
+          "preview_resolution_reduce_factor": 2,
+          "frame_skip_count": 3
         }
       }
     ]
@@ -424,9 +304,14 @@
     "keyboard_input_enabled": false,
     "gpio_enabled": false,
     "gpio_pin_shutdown": 17,
-    "gpio_pin_reboot": 18
+    "gpio_pin_reboot": 18,
+    "gpio_pin_job_next": 27,
+    "gpio_pin_job_reject": 22,
+    "gpio_pin_job_abort": 20
   },
   "misc": {
-    "secret_key": "ThisIsTheDefaultSecret"
+    "secret": "ec6cdfab73e3f08d10c995b7b8d575c4",
+    "cmd_shutdown": "shutdown now",
+    "cmd_reboot": "reboot"
   }
 }
