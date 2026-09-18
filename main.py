@@ -2,7 +2,9 @@
 # Watchdog: https://github.com/gorakhargosh/watchdog
 
 import os, multiprocessing, qrcode, time
-from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build, MediaFileUpload
 from googleapiclient.errors import HttpError
 from datetime import datetime
@@ -13,8 +15,11 @@ from dotenv import load_dotenv
 
 # Load the .env file
 load_dotenv()
-service_account_file_path = os.getenv("SERVICE_ACCOUNT_FILE_PATH")
 main_folder_id = os.getenv("MAIN_FOLDER_ID")
+# OAuth credential files (paths overridable via .env). token.json is portable:
+# copy it to other booths and they run headlessly with no browser step.
+token_file = os.getenv("TOKEN_FILE", "token.json")
+client_secret_file = os.getenv("CLIENT_SECRET_FILE", "client_secret.json")
 
 # Pipeline coupling to photobooth-app's output (override in .env per app version/collage).
 # WATCH_DIR must be the folder photobooth-app writes finished images into.
@@ -22,14 +27,36 @@ main_folder_id = os.getenv("MAIN_FOLDER_ID")
 watch_dir = os.getenv("WATCH_DIR", "./photobooth-data/media/processed_full")
 pics_per_session = int(os.getenv("PICS_PER_SESSION", "2"))
 
-# Define the Google Drive API scopes and service account file path
+# Define the Google Drive API scope
 SCOPES = ['https://www.googleapis.com/auth/drive']
-SERVICE_ACCOUNT_FILE = service_account_file_path
 
-# Create credentials using the service account file
-credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+def get_credentials():
+    """Return OAuth user credentials, refreshing or authorizing as needed.
 
-# Build the Google Drive service
+    Files (owned by the signed-in user) are uploaded against that user's own
+    storage quota, so this works on a free Gmail account where a service
+    account cannot (a service account has no quota of its own).
+
+    - First run with no token.json: opens a browser once to authorize, then
+      saves the refresh token to token.json.
+    - Later runs / other machines: load token.json and refresh silently. Copy
+      token.json between booths to avoid re-authorizing on each machine.
+    """
+    creds = None
+    if os.path.exists(token_file):
+        creds = Credentials.from_authorized_user_file(token_file, SCOPES)
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(client_secret_file, SCOPES)
+            creds = flow.run_local_server(port=0)
+        with open(token_file, "w", encoding="utf-8") as token:
+            token.write(creds.to_json())
+    return creds
+
+# Create OAuth credentials and build the Google Drive service
+credentials = get_credentials()
 drive_service = build('drive', 'v3', credentials=credentials)
 
 new_pics_paths = []                                             # contain images file paths

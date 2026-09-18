@@ -168,6 +168,20 @@ photobooth-data/tmp
 photobooth-data/userdata
 
 photobooth-data/config/config.json_backup*
+photobooth-data/cache
+
+# Secrets & credentials (repo is public — never commit these)
+token.json
+client_secret*.json
+secrets/
+*service-account*.json
+*service_account*.json
+.env
+
+# Live photobooth-app runtime config (machine-specific; config.json holds admin_password + session secret)
+photobooth-data/config/config.json
+photobooth-data/config/plugin_synchronizer.json*
+photobooth-data/config/rclone.conf
 
 fix.py
 temp
