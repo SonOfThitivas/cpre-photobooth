@@ -1,3 +1,17 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# requirements.txt — full pinned environment for the `legacy-oauth-v9` booth.
+#
+# This is an exact freeze of the known-good .venv, so
+#     python -m pip install -r requirements.txt
+# reproduces a working setup in one step. It pins BOTH:
+#   • photobooth-app 9.0.0 and all of its transitive dependencies, and
+#   • the uploader's (main.py) direct dependencies:
+#       google-api-python-client, google-auth-oauthlib, google-auth-httplib2,
+#       watchdog, qrcode, pillow, python-dotenv
+#
+# Verified on Python 3.14 (photobooth-app 9 requires Python 3.11+).
+# To refresh after changing dependencies:  pip freeze > requirements.txt
+# ─────────────────────────────────────────────────────────────────────────────
 alembic==1.20.0
 annotated-doc==0.0.5
 annotated-types==0.8.0

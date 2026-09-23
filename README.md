@@ -25,7 +25,7 @@ A **service account has no Drive storage quota**, so it cannot upload files to a
 
 ## Prerequisites
 
-- **Python 3.11+** (photobooth-app 9 requires it).
+- **Python 3.11+** (photobooth-app 9 requires it). This repo's pinned build is **verified on Python 3.14** — check with `python --version`.
 - **photobooth-app 9.0.0** (installed via `requirements.txt`). No separate `ffmpeg` / `libjpeg-turbo` needed — v9 bundles them.
 - A **Google Cloud project** with the **Drive API enabled**.
 - An **OAuth client ID of type _Desktop app_** → download it as `client_secret.json`.
@@ -34,11 +34,20 @@ A **service account has no Drive storage quota**, so it cannot upload files to a
 
 ## Setup
 
+Create the virtual environment (the repo standardises on **`.venv`**) and install everything:
+
 ```bash
-python -m venv venv
-.\venv\Scripts\activate
+python -m venv .venv
+.\.venv\Scripts\activate
 python -m pip install -r requirements.txt
 ```
+
+`requirements.txt` is a **full pinned freeze** of a known-good environment, so that one
+`pip install` reproduces a working booth. It installs **both** photobooth-app 9.0.0 (plus all
+its dependencies — including the bundled `ffmpeg`/`libjpeg-turbo`, so nothing else is needed)
+**and** the uploader's own direct dependencies (`google-api-python-client`,
+`google-auth-oauthlib`, `google-auth-httplib2`, `watchdog`, `qrcode`, `pillow`,
+`python-dotenv`). If you ever change dependencies, refresh the file with `pip freeze > requirements.txt`.
 
 Put your **`client_secret.json`** (the Desktop OAuth client) in the repo root, then create **`.env`** — copy `.env.example` and fill in your folder id:
 
@@ -86,16 +95,16 @@ Two terminals, both in the venv.
 
 **Terminal 1 — the photobooth app**
 ```bash
-.\venv\Scripts\activate
+.\.venv\Scripts\activate
 cd photobooth-data
 photobooth.exe
 ```
-Open `http://localhost:8000`.
+Open `http://localhost:8000`. (`photobooth.exe` is installed into `.venv\Scripts` by the pip install; running it from inside `photobooth-data` keeps all its `config/`, `database/`, and `media/` folders there.)
 
 **Terminal 2 — the uploader**
 ```bash
-.\venv\Scripts\activate
-py main.py
+.\.venv\Scripts\activate
+python main.py
 ```
 
 Take a collage capture; `main.py` creates the Drive sub-folder, uploads the images, and pops the QR to the shared folder.
