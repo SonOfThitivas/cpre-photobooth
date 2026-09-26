@@ -10,8 +10,8 @@
       {
         "name": "default action",
         "jobcontrol": {
-          "countdown_capture": 1.0,
-          "countdown_capture_second_following": 1.0,
+          "countdown_capture": 10.0,
+          "countdown_capture_second_following": 5.0,
           "ask_approval_each_capture": false,
           "approve_autoconfirm_timeout": 15.0,
           "show_individual_captures_in_gallery": true
@@ -26,57 +26,58 @@
           "canvas_height": 1280,
           "merge_definition": [
             {
-              "description": "left",
-              "pos_x": 160,
-              "pos_y": 220,
+              "description": "top_left",
+              "pos_x": 269,
+              "pos_y": 330,
               "pos_z": 0,
-              "width": 510,
-              "height": 725,
+              "width": 657,
+              "height": 369,
               "rotate": 0,
               "predefined_image": null,
-              "image_filter": "FilterPilgram2.earlybird"
-            },
-            {
-              "description": "middle predefined",
-              "pos_x": 705,
-              "pos_y": 66,
-              "pos_z": 0,
-              "width": 510,
-              "height": 725,
-              "rotate": 0,
-              "predefined_image": "userdata\\demoassets\\predefined_images\\photobooth-collage-predefined-image.png",
               "image_filter": "original"
             },
             {
-              "description": "right",
-              "pos_x": 1245,
-              "pos_y": 220,
+              "description": "top_right",
+              "pos_x": 984,
+              "pos_y": 330,
               "pos_z": 0,
-              "width": 510,
-              "height": 725,
+              "width": 657,
+              "height": 369,
               "rotate": 0,
               "predefined_image": null,
-              "image_filter": "FilterPilgram2.reyes"
+              "image_filter": "original"
+            },
+            {
+              "description": "bottom_left",
+              "pos_x": 269,
+              "pos_y": 792,
+              "pos_z": 0,
+              "width": 657,
+              "height": 369,
+              "rotate": 0,
+              "predefined_image": null,
+              "image_filter": "original"
+            },
+            {
+              "description": "bottom_right",
+              "pos_x": 984,
+              "pos_y": 792,
+              "pos_z": 0,
+              "width": 657,
+              "height": 369,
+              "rotate": 0,
+              "predefined_image": null,
+              "image_filter": "original"
             }
           ],
           "canvas_fill_background_enable": false,
           "canvas_fill_background_color": "#2e6f40",
-          "canvas_img_background_enable": false,
-          "canvas_img_background_file": null,
-          "canvas_img_front_enable": true,
-          "canvas_img_front_file": "userdata\\demoassets\\frames\\pixabay-poster-2871536_1920.png",
-          "canvas_texts_enable": true,
-          "canvas_texts": [
-            {
-              "text": "Have a nice day :)",
-              "pos_x": 200,
-              "pos_y": 1100,
-              "rotate": 1,
-              "font_size": 40,
-              "font": "userdata\\demoassets\\fonts\\Roboto-Bold.ttf",
-              "color": "#333"
-            }
-          ]
+          "canvas_img_background_enable": true,
+          "canvas_img_background_file": "userdata/ece_openhouse_2027.png",
+          "canvas_img_front_enable": false,
+          "canvas_img_front_file": null,
+          "canvas_texts_enable": false,
+          "canvas_texts": []
         },
         "trigger": {
           "ui_trigger": {
@@ -254,8 +255,8 @@
     "livestream_blurredbackground": true,
     "livestream_blurredbackground_high_framerate": false,
     "livestream_frameoverlay": {
-      "enable": true,
-      "image": "userdata\\demoassets\\frames\\frame_image_photobooth-app.png",
+      "enable": false,
+      "image": null,
       "mirror_effect": true
     },
     "FRONTPAGE_TEXT": "<div class=\"fixed-center text-h2 text-weight-bold text-center text-white\" style=\"text-shadow: 4px 4px 4px #666;\">Hey!<br>Let's take some pictures! <br>📷</div>",
@@ -289,11 +290,11 @@
           "camera_standby_when_inactive": true,
           "camera_standby_when_inactive_time": 30,
           "backend_type": "WebcamPyav",
-          "device_identifier": "Integrated Webcam",
+          "device_identifier": "กล้อง MacBook Neo",
           "pixel_format": "auto",
           "cam_resolution_width": 1280,
           "cam_resolution_height": 720,
-          "cam_framerate": 0,
+          "cam_framerate": 30,
           "preview_resolution_reduce_factor": 2,
           "frame_skip_count": 3
         }
