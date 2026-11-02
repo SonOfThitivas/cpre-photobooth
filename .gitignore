@@ -165,7 +165,8 @@ photobooth-data/log
 photobooth-data/media
 photobooth-data/recycle
 photobooth-data/tmp
-photobooth-data/userdata
+photobooth-data/userdata/*
+!photobooth-data/userdata/ece_openhouse_2027.png
 
 photobooth-data/config/config.json_backup*
 photobooth-data/cache
@@ -192,3 +193,4 @@ temp
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+.DS_Store
