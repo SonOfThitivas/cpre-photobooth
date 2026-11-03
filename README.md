@@ -2,7 +2,7 @@
 
 # 📸 Photobooth-app on Windows with Python 🐍
 
-**Branch `legacy-oauth-v9`** — the original custom-uploader pipeline, updated for **photobooth-app 9.0.0** and switched from a Google **service account** to **OAuth** (so it works on a free Gmail account).
+The original custom-uploader pipeline on **photobooth-app 9.0.0**, uploading to Google Drive with **OAuth** (so it works on a free Gmail account).
 
 ## How it works
 
@@ -116,7 +116,6 @@ Take a collage capture; `main.py` creates the Drive sub-folder, uploads the imag
 
 ## Other branches
 
-- `main` — earlier state (photobooth-app 6.0.0, service-account auth).
 - `option-a-rclone-drive` — an experiment using photobooth-app 9's **native** Rclone synchronizer; abandoned due to upstream bugs (see that branch's `docs/PIPELINE-OPTION-A.md`).
 - `photobooth-app-4.0.0` — the original Oct 2024 version.
 

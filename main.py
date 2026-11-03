@@ -5,6 +5,7 @@ import os, qrcode, time, threading
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from google.auth.exceptions import RefreshError
 from googleapiclient.discovery import build, MediaFileUpload
 from googleapiclient.errors import HttpError
 from datetime import datetime
@@ -45,14 +46,21 @@ def get_credentials():
       saves the refresh token to token.json.
     - Later runs / other machines: load token.json and refresh silently. Copy
       token.json between booths to avoid re-authorizing on each machine.
+    - If Google rejects the refresh token (invalid_grant: revoked, password
+      changed, or expired because the consent screen is still in Testing),
+      fall back to the browser flow and overwrite token.json.
     """
     creds = None
     if os.path.exists(token_file):
         creds = Credentials.from_authorized_user_file(token_file, SCOPES)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+            except RefreshError as e:
+                print(f"Saved token rejected ({e}); re-authorizing in the browser...")
+                creds = None
+        if not creds or not creds.valid:
             flow = InstalledAppFlow.from_client_secrets_file(client_secret_file, SCOPES)
             creds = flow.run_local_server(port=0)
         with open(token_file, "w", encoding="utf-8") as token:
@@ -103,22 +111,12 @@ def upload_file(file_path, name=None, parent_folder_id=None):   # Upload images 
     return created_file["id"]
 
 def share_file(real_file_id):                                   # Permission Modification
-    """Batch permission modification.
+    """Make a file/folder readable by anyone with the link.
     Args:
         real_file_id: file Id
-        real_user: User ID
-        real_domain: Domain of the user ID
     Prints modified permissions
-
-    Load pre-authorized user credentials from the environment.
-    TODO(developer) - See https://developers.google.com/identity
-    for guides on implementing OAuth2 for the application.
     """
-    # creds, _ = google.auth.default()
-
     try:
-        # create drive api client
-        service = build("drive", "v3", credentials=credentials)
         ids = []
         file_id = real_file_id
 
@@ -132,13 +130,13 @@ def share_file(real_file_id):                                   # Permission Mod
                 ids.append(response.get("id"))
 
         # pylint: disable=maybe-no-member
-        batch = service.new_batch_http_request(callback=callback)
+        batch = drive_service.new_batch_http_request(callback=callback)
         anyone_permission = {
             "type": "anyone",
             "role": "reader",
         }
         batch.add(
-            service.permissions().create(
+            drive_service.permissions().create(
                 fileId=file_id,
                 body=anyone_permission,
                 fields="id",
