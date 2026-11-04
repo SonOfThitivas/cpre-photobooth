@@ -158,18 +158,18 @@ cython_debug/
 possible-dream-436907-s2-15ffd7fa994a.json
 libjpeg-turbo64
 ffmpeg-7.0.2-full_build
-qr_code_folder/*.png
+booth/qr_code_folder/*.png
 
-photobooth-data/database
-photobooth-data/log
-photobooth-data/media
-photobooth-data/recycle
-photobooth-data/tmp
-photobooth-data/userdata/*
-!photobooth-data/userdata/ece_openhouse_2027.png
+booth/photobooth-data/database
+booth/photobooth-data/log
+booth/photobooth-data/media
+booth/photobooth-data/recycle
+booth/photobooth-data/tmp
+booth/photobooth-data/userdata/*
+!booth/photobooth-data/userdata/ece_openhouse_2027.png
 
-photobooth-data/config/config.json_backup*
-photobooth-data/cache
+booth/photobooth-data/config/config.json_backup*
+booth/photobooth-data/cache
 
 # Secrets & credentials (repo is public — never commit these)
 token.json
@@ -182,11 +182,17 @@ secrets/
 # Live photobooth-app runtime config. config.json IS tracked (shared booth
 # settings; note it contains admin_password + session secret). Other runtime
 # configs stay ignored — they can hold rclone/plugin credentials.
-photobooth-data/config/plugin_synchronizer.json*
-photobooth-data/config/rclone.conf
+booth/photobooth-data/config/plugin_synchronizer.json*
+booth/photobooth-data/config/rclone.conf
 
 fix.py
 temp
+
+# MediaPipe model, downloaded by gesture/gesture_trigger.py on first run
+gesture/models/
+
+# Service logs written by run.py
+logs/
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore

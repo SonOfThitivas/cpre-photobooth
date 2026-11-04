@@ -1,0 +1,24 @@
+# Hand-gesture capture trigger for the photobooth. Lives in its own uv project
+# (own gesture/.venv) so MediaPipe's opencv-contrib-python never shares a cv2/
+# folder with photobooth-app's opencv-python-headless in the root .venv.
+[project]
+name = "photobooth-gesture"
+version = "0.1.0"
+description = "Hold a thumbs-up for 3 s to start a photobooth-app capture"
+requires-python = ">=3.11"
+dependencies = [
+    "mediapipe==1.2.2",
+    "pyvirtualcam>=0.15",
+    "pygrabber>=0.2; sys_platform == 'win32'",
+    "requests>=2.32",
+    "python-dotenv>=1.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
