@@ -8,9 +8,9 @@ How this repo works end to end, how to run it, and what changed moving from phot
 This repo is **two cooperating processes**, not one app:
 
 1. **`photobooth.exe` / `photobooth-app`** — the upstream [photobooth-app](https://github.com/photobooth-app/photobooth-app)
-   (pinned in `requirements.txt`). It drives the camera, runs the capture UI at
+   (pinned in `booth/uv.lock`). It drives the camera, runs the capture UI at
    `http://localhost:8000`, and writes finished images into its media directory. It is
-   configured entirely by `photobooth-data/config/config.json` and `photobooth-data/userdata/`.
+   configured entirely by `booth/photobooth-data/config/config.json` and `booth/photobooth-data/userdata/`.
 2. **`main.py`** — a small custom "uploader" glue script we own. It does **not** touch the
    camera. It watches the photobooth's output folder, and when a session's images land it
    creates a Drive folder, makes it public, uploads them, and shows a QR code to the shared
@@ -32,6 +32,10 @@ This repo is **two cooperating processes**, not one app:
                                               │ 4. thread: upload the burst's files│
                                               └──────────────────────────────────┘
 ```
+
+An optional third process, `gesture/gesture_trigger.py`, sits *in front of* photobooth-app: it
+owns the webcam, feeds it through the OBS Virtual Camera, and starts sessions from an "L" hand
+sign via `/api/actions`. It doesn't touch this upload pipeline — see [GESTURE.md](GESTURE.md).
 
 We deliberately do **not** use photobooth-app 9's built-in Rclone synchronizer / share links:
 upstream bugs break the share-link QR (see the `option-a-rclone-drive` branch). Talking to the
@@ -59,7 +63,7 @@ The main loop polls every 100 ms:
 
 ## Prerequisites
 
-- **Python 3.11+** (photobooth-app 9 requires it; this repo's pins are verified on 3.14).
+- **uv**. `booth/.python-version` pins **Python 3.14** (the verified build); the lock needs 3.12+.
 - No separate **libjpeg-turbo** or **ffmpeg** install — photobooth-app 9 bundles them.
 - A **Google Cloud project** with the Drive API enabled and a **Desktop app OAuth client**
   (`client_secret.json`), with the consent screen **published**. See the README for details.
@@ -67,13 +71,15 @@ The main loop polls every 100 ms:
 
 ## Setup
 
+photobooth-app and `main.py` live in the `booth/` uv project (`booth/.venv`); the gesture
+trigger is a separate uv project in `gesture/`. Create the booth environment from its lock:
+
 ```bash
-python -m venv .venv
-.\.venv\Scripts\activate
-python -m pip install -r requirements.txt
+uv sync --locked --project booth
 ```
 
-Copy `.env.example` to `.env` in the repo root and fill it in:
+Put `client_secret.json` in `booth/`. Copy `.env.example` to `.env` in the repo root and fill it in
+(`main.py` finds it by walking up from `booth/`; paths below are relative to `booth/`):
 
 ```.env
 MAIN_FOLDER_ID={your google drive parent folder id}
@@ -84,30 +90,29 @@ WATCH_DIR=./photobooth-data/media/processed_full
 SESSION_QUIET_SECONDS=3
 ```
 
-On the first run `main.py` opens a browser to authorize and writes `token.json`. If Google
+On the first run `main.py` opens a browser to authorize and writes `booth/token.json`. If Google
 later rejects the saved token (`invalid_grant`), it falls back to the browser flow and
 overwrites `token.json`.
 
 Restore runtime assets that are **gitignored** and must exist locally (see `.gitignore`):
-`photobooth-data/media`, `photobooth-data/userdata` (backgrounds/frames/fonts referenced by
-`config.json`), `photobooth-data/database`, `photobooth-data/log`.
+`booth/photobooth-data/media`, `booth/photobooth-data/userdata` (backgrounds/frames/fonts
+referenced by `config.json`), `booth/photobooth-data/database`, `booth/photobooth-data/log`.
 
 ## Run
 
-Two terminals, both inside the venv.
+Two terminals (plus the gesture trigger's, see [GESTURE.md](GESTURE.md)); no activation needed.
 
 **Terminal 1 — the photobooth app**
 ```bash
-.\.venv\Scripts\activate
-cd photobooth-data
-photobooth.exe
+cd booth/photobooth-data
+uv run photobooth
 ```
 Open `http://localhost:8000`.
 
 **Terminal 2 — the uploader**
 ```bash
-.\.venv\Scripts\activate
-python main.py
+cd booth
+uv run main.py
 ```
 
 Take a collage capture in the web UI; `main.py` uploads the result and pops the QR code.
@@ -120,12 +125,13 @@ Take a collage capture in the web UI; `main.py` uploads the result and pops the 
 | Session trigger | `PICS_PER_SESSION` exact file count (default 2) | `SESSION_QUIET_SECONDS` quiet-window debounce (default 3) | No count to keep in sync with the collage layout. |
 | Concurrency | `multiprocessing.Process` per upload + QR | `threading.Thread` for QR + uploads, joined per session | QR shows immediately; one Drive client, never shared across sessions. |
 | Watched folder | `processed_full` | `processed_full` (`WATCH_DIR`) | Unchanged in v9. |
-| Venv folder | `venv` | `.venv` | Repo standardises on `.venv`. |
+| Environment | `venv` + pip `requirements.txt` | uv project `booth/` → `booth/.venv` + `uv.lock` | Exact, locked installs with `uv sync --locked`. |
 | libjpeg-turbo / ffmpeg | Manual install on `PATH` | Bundled | Nothing extra to install. |
 
 ## Packages
 
-Key pins, 6.0.0 vs current `main` (`requirements.txt` is a full pinned freeze):
+Key pins, 6.0.0 vs current `main` (`booth/uv.lock` pins every package; it was locked to
+the previously verified pip freeze, so versions are unchanged):
 
 | Package | 6.0.0 | main | Note |
 | --- | --- | --- | --- |
@@ -146,4 +152,4 @@ New transitive deps from photobooth-app 9 include `av` (bundled ffmpeg) and `rcl
 
 `main.py` directly uses: `google-api-python-client`, `google-auth`, `google-auth-oauthlib`,
 `google-auth-httplib2`, `watchdog`, `qrcode`, `pillow`, `python-dotenv`, plus stdlib
-`threading`. All are pinned in `requirements.txt`.
+`threading`. All are declared in `booth/pyproject.toml` and pinned in `booth/uv.lock`.

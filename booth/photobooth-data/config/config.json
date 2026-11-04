@@ -290,7 +290,7 @@
           "camera_standby_when_inactive": true,
           "camera_standby_when_inactive_time": 30,
           "backend_type": "WebcamPyav",
-          "device_identifier": "Integrated Webcam",
+          "device_identifier": "OBS Virtual Camera",
           "pixel_format": "auto",
           "cam_resolution_width": 1280,
           "cam_resolution_height": 720,

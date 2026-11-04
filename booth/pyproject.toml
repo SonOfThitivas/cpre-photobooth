@@ -1,0 +1,23 @@
+# photobooth-app 9 (camera + capture UI) and main.py (Drive uploader + QR) share this uv
+# project and its booth/.venv. The gesture trigger is a separate uv project in ../gesture —
+# deliberately not a workspace member, so their environments (and OpenCV builds) never mix.
+[project]
+name = "cpre-photobooth"
+version = "0.1.0"
+description = "photobooth-app 9 with a Google Drive uploader that shows one QR per session"
+requires-python = ">=3.12"
+dependencies = [
+    "photobooth-app==9.0.0",
+    # main.py
+    "google-api-python-client==2.200.0",
+    "google-auth==2.58.0",
+    "google-auth-httplib2==0.4.2",
+    "google-auth-oauthlib==1.4.1",
+    "watchdog==6.0.0",
+    "qrcode==8.2",
+    "pillow==12.3.0",
+    "python-dotenv==1.2.3",
+]
+
+[tool.uv]
+package = false
