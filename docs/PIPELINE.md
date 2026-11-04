@@ -56,6 +56,18 @@ The main loop polls every 100 ms:
   - **Upload thread** — uploads each file in the burst. The loop `join()`s it before the next
     session, so the single Drive client is never used from two threads at once.
 
+**When Drive or the network fails** (all in `process_session()`):
+
+- Every Drive request retries up to `DRIVE_RETRIES` (4) times with googleapiclient's
+  exponential backoff (~2, 4, 8, 16 s); the `Sleeping … before retry` warnings show in the log.
+- If creating or sharing the folder still fails, the session is logged as `NOT uploaded` with
+  its file list and the loop carries on. The photos stay in `WATCH_DIR`, and no QR is shown
+  for a folder guests couldn't open.
+- A failed file upload doesn't stop the rest; the log ends with `Uploaded n of m file(s)`.
+- Connections go **IPv4 first**: on networks with broken IPv6, httplib2 gave up on the first
+  (IPv6) address that timed out, so every Drive call failed with `WinError 10060` after ~21 s
+  while browsers worked. IPv6 remains the fallback.
+
 > A collage session writes several files (each individual shot **plus** the composite) over a
 > second or two. The quiet-window debounce groups them automatically, so there is no
 > hard-coded per-session count to keep in sync with the collage definition. Raise
@@ -100,7 +112,17 @@ referenced by `config.json`), `booth/photobooth-data/database`, `booth/photoboot
 
 ## Run
 
-Two terminals (plus the gesture trigger's, see [GESTURE.md](GESTURE.md)); no activation needed.
+From the repo root, one command starts the gesture trigger, photobooth-app and `main.py` in
+order and restarts any that crash (`--no-gesture` for a touch-only booth; see the README's **Run**):
+
+```bash
+uv run run.py
+```
+
+Open `http://localhost:8000`. Logs are in `logs/<service>.log`.
+
+**By hand** — two terminals (plus the gesture trigger's, see [GESTURE.md](GESTURE.md)); no
+activation needed. Nothing restarts a crashed service this way.
 
 **Terminal 1 — the photobooth app**
 ```bash
