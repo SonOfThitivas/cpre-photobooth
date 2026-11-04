@@ -70,9 +70,13 @@ of `gesture_trigger.py`; `gesture/tests/` covers the rule and the hold timer on 
 
 ## Run
 
-Start the gesture tab **first**, so the virtual camera is already streaming at 1280×720 when
-photobooth-app opens it; then photobooth-app and `main.py` in their own tabs (see the README's
-**Run**). If photobooth-app was started first, restart it.
+`uv run run.py` from the repo root starts all three services in the right order (see the
+README's **Run**). It waits for this script's `Streaming to virtual camera` line before it
+starts photobooth-app, and restarts photobooth-app whenever this script restarts.
+
+By hand: start the gesture tab **first**, so the virtual camera is already streaming at 1280×720
+when photobooth-app opens it; then photobooth-app and `main.py` in their own tabs. If
+photobooth-app was started first, restart it.
 
 ```bash
 cd gesture
@@ -85,4 +89,5 @@ uv run pytest                           # tests
 ## Touch-only booth again
 
 Set `device_identifier` back to the webcam (`"Integrated Webcam"`) in photobooth-app's admin UI
-or `booth/photobooth-data/config/config.json`, and run only photobooth-app and `main.py`.
+or `booth/photobooth-data/config/config.json`, then start with `uv run run.py --no-gesture`
+(or run only photobooth-app and `main.py` by hand).

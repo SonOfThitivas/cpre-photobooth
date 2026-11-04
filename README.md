@@ -17,6 +17,7 @@ cpre-photobooth/
 │  └─ token.json, client_secret.json   (gitignored)
 ├─ gesture/               uv project → gesture/.venv
 │  └─ gesture_trigger.py  thumbs-up capture trigger
+├─ run.py                 starts all three services and keeps them running (stdlib only)
 └─ docs/
 ```
 
@@ -106,7 +107,34 @@ You do **not** need `client_secret.json` on the extra machines once `token.json`
 
 ## Run
 
-Three Windows Terminal tabs, started from the repo root, in this order. No venv activation — `uv run` picks the right `.venv` from the folder you're in.
+From the repo root, one command starts all three services and keeps them running:
+
+```bash
+uv run run.py
+```
+
+Touch-only booth (no gesture trigger):
+
+```bash
+uv run run.py --no-gesture
+```
+
+Open `http://localhost:8000`, show a thumbs-up for 3 seconds (or press the on-screen button); `main.py` creates the Drive sub-folder, uploads the images, and pops the QR to the shared folder. **Ctrl+C** stops everything.
+
+`run.py` is a small supervisor that uses only the standard library. It imports nothing from `booth/` or `gesture/`; it starts each service with `uv run` in its own folder, so each still runs in its own `.venv`. It:
+
+1. **Checks before starting**, and refuses to start with a clear message if something is wrong: `uv` and both `.venv`s exist, `.env` has `MAIN_FOLDER_ID`, `booth/token.json` (or `client_secret.json`) exists, photobooth-app's camera matches the mode (`"OBS Virtual Camera"` with the gesture trigger, your real webcam with `--no-gesture`), and nothing is already running on port 8000.
+2. **Starts in order, waiting until each one is really ready:** the gesture trigger (until it streams to the virtual camera), then photobooth-app (until `http://localhost:8000` answers), then the uploader.
+3. **Restarts any service that exits**, waiting 1 s, 2 s, 4 s … up to 60 s between tries, so a permanently broken one doesn't spin. photobooth-app reads the gesture trigger's virtual camera, so while the gesture trigger is down photobooth-app is stopped too, and started again once the camera streams.
+4. **Logs** every line to the console, prefixed `[gesture]` / `[photobooth]` / `[uploader]`, and to `logs/<service>.log` (gitignored). Supervisor messages (starts, crashes, restarts) are in `logs/run.log`.
+
+`python run.py` works too, since it needs no packages.
+
+**Touch-only booth:** `--no-gesture` needs photobooth-app's camera `device_identifier` set back to your webcam (e.g. `"Integrated Webcam"`) in its admin UI or `config.json`. `run.py` checks this and won't start until it matches.
+
+### Run by hand (three terminals)
+
+To work on one service, or to see each service in its own window, start them yourself in three Windows Terminal tabs from the repo root, in this order. No venv activation — `uv run` picks the right `.venv` from the folder you're in.
 
 **Tab 1 — gesture trigger** (first, so the virtual camera is already streaming when photobooth-app opens it)
 ```bash
@@ -127,9 +155,7 @@ cd booth
 uv run main.py
 ```
 
-Show a thumbs-up for 3 seconds (or press the on-screen button); `main.py` creates the Drive sub-folder, uploads the images, and pops the QR to the shared folder.
-
-**Touch-only booth** (no gesture tab): set photobooth-app's camera `device_identifier` back to your webcam (e.g. `"Integrated Webcam"`) in its admin UI or `config.json`, and run only tabs 2 and 3.
+Touch-only booth by hand: set the camera back to your webcam as above, and run only tabs 2 and 3. Started by hand, nothing restarts a service that crashes.
 
 ## Tuning to your app version / collage
 

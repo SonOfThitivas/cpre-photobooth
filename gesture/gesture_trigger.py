@@ -214,7 +214,7 @@ def open_virtual_camera():
     except RuntimeError as error:
         sys.exit(f"Could not open virtual camera {virtual_camera!r}: {error}\n"
                  "Install OBS Studio (it provides the virtual camera), then run this again.")
-    print(f"Streaming to virtual camera {vcam.device!r}")
+    print(f"Streaming to virtual camera {vcam.device!r}")      # run.py waits for this line
     return vcam
 
 def ensure_model():

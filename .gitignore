@@ -190,6 +190,9 @@ temp
 
 # MediaPipe model, downloaded by gesture/gesture_trigger.py on first run
 gesture/models/
+
+# Service logs written by run.py
+logs/
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
