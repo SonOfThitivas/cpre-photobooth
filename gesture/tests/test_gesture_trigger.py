@@ -3,9 +3,10 @@ import math
 import numpy as np
 import pytest
 
-from gesture_trigger import HoldTimer, is_l_sign
+from gesture_trigger import HoldTimer, is_thumbs_up
 
-# Synthetic right hand in metres, palm facing the camera, fingers pointing +y.
+# Synthetic right hand in metres, palm facing the camera, fingers pointing +y. Axes follow
+# the camera image (y points down), as MediaPipe's landmarks do.
 MCP = {"index": (0.025, 0.085, 0.0), "middle": (0.0, 0.09, 0.0),
        "ring": (-0.02, 0.085, 0.0), "pinky": (-0.04, 0.075, 0.0)}
 
@@ -37,28 +38,41 @@ def rotated(p, degrees):            # whole hand rotated in the image plane
     r = np.array([[math.cos(a), -math.sin(a), 0], [math.sin(a), math.cos(a), 0], [0, 0, 1]])
     return p @ r.T
 
-L_HAND = hand(THUMB_OUT)
+# THUMB_OUT points +x; turning the hand -90 degrees makes the thumb point up (-y) with the
+# curled fingers lying sideways: a thumbs-up.
+def upright(p):
+    return rotated(p, -90)
+
+THUMBS_UP = upright(hand(THUMB_OUT, index="in"))
+LEFT_THUMBS_UP = mirrored(THUMBS_UP)
 
 @pytest.mark.parametrize("points", [
-    L_HAND,
-    mirrored(L_HAND),
-    rotated(L_HAND, 35),
-    rotated(mirrored(L_HAND), -60),
-    rotated(L_HAND, 180),
+    THUMBS_UP,
+    LEFT_THUMBS_UP,
+    rotated(THUMBS_UP, 25),                                         # tilted either way
+    rotated(THUMBS_UP, -25),
+    rotated(LEFT_THUMBS_UP, 30),
 ])
-def test_l_sign_detected(points):
-    assert is_l_sign(points)
+def test_thumbs_up_detected(points):
+    assert is_thumbs_up(points)
 
 @pytest.mark.parametrize("points", [
-    hand(THUMB_OUT, middle="out", ring="out", pinky="out"),         # open palm
-    hand(THUMB_TUCKED, index="in"),                                 # fist
-    hand(THUMB_TUCKED),                                             # pointing, thumb tucked
-    hand(THUMB_ALONG_INDEX),                                        # thumb up beside index
-    hand(THUMB_OUT, middle="out"),                                  # thumb + two fingers
-    hand(THUMB_OUT, index="in"),                                    # thumbs-up-ish
+    rotated(THUMBS_UP, 180),                                        # thumbs-down
+    hand(THUMB_OUT, index="in"),                                    # thumb pointing sideways
+    rotated(THUMBS_UP, 60),                                         # tilted too far
+    upright(hand(THUMB_OUT)),                                       # index out too (L sign)
+    upright(hand(THUMB_OUT, index="out", middle="out", ring="out", pinky="out")),  # open palm
+    upright(hand(THUMB_TUCKED, index="in")),                        # fist, thumb tucked
+    upright(hand(THUMB_ALONG_INDEX, index="in")),                   # thumb along the fist
 ])
 def test_other_gestures_rejected(points):
-    assert not is_l_sign(points)
+    assert not is_thumbs_up(points)
+
+def test_up_comes_from_the_image_points():
+    # Same hand shape, but the camera image shows it upside down -> not a thumbs-up.
+    flipped_image = rotated(THUMBS_UP, 180)[:, :2]
+    assert is_thumbs_up(THUMBS_UP, THUMBS_UP[:, :2])
+    assert not is_thumbs_up(THUMBS_UP, flipped_image)
 
 FRAME = 1 / 30
 

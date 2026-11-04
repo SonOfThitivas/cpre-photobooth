@@ -34,8 +34,8 @@ This repo is **two cooperating processes**, not one app:
 ```
 
 An optional third process, `gesture/gesture_trigger.py`, sits *in front of* photobooth-app: it
-owns the webcam, feeds it through the OBS Virtual Camera, and starts sessions from an "L" hand
-sign via `/api/actions`. It doesn't touch this upload pipeline — see [GESTURE.md](GESTURE.md).
+owns the webcam, feeds it through the OBS Virtual Camera, and starts sessions from a thumbs-up
+via `/api/actions`. It doesn't touch this upload pipeline — see [GESTURE.md](GESTURE.md).
 
 We deliberately do **not** use photobooth-app 9's built-in Rclone synchronizer / share links:
 upstream bugs break the share-link QR (see the `option-a-rclone-drive` branch). Talking to the

@@ -1,7 +1,7 @@
 # Hand-gesture capture trigger for photobooth-app.
 #
-# Owns the physical webcam, detects an "L" hand sign (thumb + index out, other fingers
-# curled, either hand) with MediaPipe, and once it has been held for GESTURE_HOLD_SECONDS
+# Owns the physical webcam, detects a thumbs-up (thumb pointing up, other fingers curled,
+# either hand) with MediaPipe, and once it has been held for GESTURE_HOLD_SECONDS
 # calls photobooth-app's action API -- the same thing the on-screen button does.
 # Every frame is forwarded to the OBS Virtual Camera, which photobooth-app uses as its
 # camera. The hand skeleton / progress ring is drawn into that stream only while the booth
@@ -42,7 +42,7 @@ model_path = Path(os.getenv("GESTURE_MODEL", HERE / "models" / "hand_landmarker.
 MODEL_URL = ("https://storage.googleapis.com/mediapipe-models/"
              "hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task")
 
-# --- L-sign geometry --------------------------------------------------------------------
+# --- thumbs-up geometry -----------------------------------------------------------------
 # Landmark indices (MediaPipe hand model): 0 wrist, then 4 joints per finger.
 WRIST = 0
 THUMB = (1, 2, 3, 4)                                            # CMC, MCP, IP, TIP
@@ -51,11 +51,10 @@ MIDDLE = (9, 10, 11, 12)
 RING = (13, 14, 15, 16)
 PINKY = (17, 18, 19, 20)
 
-FINGER_STRAIGHT_MAX_DEG = 40        # bend below this -> finger extended
 FINGER_CURLED_MIN_DEG = 80          # bend above this -> finger curled
 THUMB_STRAIGHT_MAX_DEG = 45
-THUMB_REACH_MIN = 0.55              # thumb tip to index knuckle, as a fraction of palm length
-L_SPREAD_DEG = (50, 130)            # angle between thumb and index finger
+THUMB_UP_MAX_TILT_DEG = 40          # thumb direction vs straight up, in the camera image
+THUMB_ABOVE_FIST_MIN = 0.3          # thumb tip above the highest finger joint, x palm length
 
 def _angle(v1, v2):
     """Angle between two vectors in degrees."""
@@ -70,25 +69,27 @@ def _bend(p, finger):
     mcp, pip, dip, tip = finger
     return _angle(p[pip] - p[mcp], p[tip] - p[dip])
 
-def is_l_sign(points):
-    """True if 21 hand landmarks (x, y, z) form an L: thumb and index out at roughly a
-    right angle, middle/ring/pinky curled. Uses only relative geometry, so it works for
-    either hand, mirrored or not, and with the hand rotated."""
-    p = np.asarray(points, dtype=float)
-    palm = _dist(p, WRIST, MIDDLE[0])
+def is_thumbs_up(points, image_points=None):
+    """True if 21 hand landmarks form a thumbs-up: thumb straight and pointing up, all four
+    fingers curled into a fist. Works for either hand, mirrored or not.
 
-    def extended(f):
-        return _bend(p, f) < FINGER_STRAIGHT_MAX_DEG and _dist(p, WRIST, f[3]) > _dist(p, WRIST, f[1])
+    `points` (x, y, z) give the hand's shape -- MediaPipe's metric world landmarks, so finger
+    curl isn't squashed by perspective. `image_points` (x, y in pixels, y pointing down) say
+    which way is up in the camera image; they default to `points`."""
+    p = np.asarray(points, dtype=float)
+    img = np.asarray(points if image_points is None else image_points, dtype=float)[:, :2]
 
     def curled(f):
         return _bend(p, f) > FINGER_CURLED_MIN_DEG or _dist(p, WRIST, f[3]) < _dist(p, WRIST, f[1])
 
-    thumb_out = (_angle(p[THUMB[2]] - p[THUMB[1]], p[THUMB[3]] - p[THUMB[2]]) < THUMB_STRAIGHT_MAX_DEG
-                 and _dist(p, THUMB[3], INDEX[0]) > THUMB_REACH_MIN * palm)
-    spread = _angle(p[THUMB[3]] - p[THUMB[1]], p[INDEX[3]] - p[INDEX[0]])
-    return (extended(INDEX) and thumb_out
-            and all(curled(f) for f in (MIDDLE, RING, PINKY))
-            and L_SPREAD_DEG[0] <= spread <= L_SPREAD_DEG[1])
+    thumb_straight = _angle(p[THUMB[2]] - p[THUMB[1]], p[THUMB[3]] - p[THUMB[2]]) < THUMB_STRAIGHT_MAX_DEG
+    tilt = _angle(img[THUMB[3]] - img[THUMB[1]], np.array([0.0, -1.0]))
+    palm = float(np.linalg.norm(img[MIDDLE[0]] - img[WRIST]))
+    above_fist = img[INDEX[0]:, 1].min() - img[THUMB[3], 1]       # landmarks 5..20 are the fingers
+    return (thumb_straight
+            and all(curled(f) for f in (INDEX, MIDDLE, RING, PINKY))
+            and tilt <= THUMB_UP_MAX_TILT_DEG
+            and above_fist >= THUMB_ABOVE_FIST_MIN * palm)
 
 class HoldTimer:
     """Measures how long a gesture has been held, tolerating short detection dropouts."""
@@ -229,7 +230,7 @@ def ensure_model():
 HAND_CONNECTIONS = [(0, 1), (1, 2), (2, 3), (3, 4), (0, 5), (5, 6), (6, 7), (7, 8),
                     (5, 9), (9, 10), (10, 11), (11, 12), (9, 13), (13, 14), (14, 15), (15, 16),
                     (13, 17), (17, 18), (18, 19), (19, 20), (0, 17)]
-COLOR_L = (90, 220, 110)            # BGR
+COLOR_ACTIVE = (90, 220, 110)       # BGR
 COLOR_HAND = (210, 210, 210)
 COLOR_TRACK = (90, 90, 90)
 
@@ -238,7 +239,7 @@ def _pixels(frame, landmarks):
     return [(int(lm.x * w), int(lm.y * h)) for lm in landmarks]
 
 def draw_hand(frame, landmarks, color, progress=0.0):
-    """Skeleton plus, while an L is being held, a progress ring around the palm.
+    """Skeleton plus, while a thumbs-up is being held, a progress ring around the palm.
     No text: photobooth-app mirrors its live preview, so text would read backwards."""
     pts = _pixels(frame, landmarks)
     for a, b in HAND_CONNECTIONS:
@@ -250,7 +251,7 @@ def draw_hand(frame, landmarks, color, progress=0.0):
         center = tuple(int(v) for v in palm.mean(axis=0))
         radius = max(40, int(1.4 * np.linalg.norm(np.subtract(pts[MIDDLE[0]], pts[WRIST]))))
         cv2.circle(frame, center, radius, COLOR_TRACK, 4, cv2.LINE_AA)
-        cv2.ellipse(frame, center, (radius, radius), -90, 0, 360 * progress, COLOR_L, 10, cv2.LINE_AA)
+        cv2.ellipse(frame, center, (radius, radius), -90, 0, 360 * progress, COLOR_ACTIVE, 10, cv2.LINE_AA)
 
 def draw_status(frame, text):
     cv2.putText(frame, text, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 5, cv2.LINE_AA)
@@ -258,7 +259,7 @@ def draw_status(frame, text):
 
 # --- main loop ----------------------------------------------------------------------------
 def main():
-    parser = argparse.ArgumentParser(description="Hold an L hand sign to start a photobooth-app capture.")
+    parser = argparse.ArgumentParser(description="Hold a thumbs-up to start a photobooth-app capture.")
     parser.add_argument("--preview", action="store_true",
                         help="show a local window with the skeleton and trigger state (q to quit)")
     parser.add_argument("--no-vcam", action="store_true",
@@ -282,10 +283,10 @@ def main():
 
     hold = HoldTimer(hold_seconds)
     hide_until = 0.0            # after firing, keep the stream clean until SSE reports the job
-    need_release = False        # after firing, the L must be dropped before the trigger re-arms
+    need_release = False        # after firing, the thumb must drop before the trigger re-arms
     released_since = None
     last_ts = 0
-    print(f"Hold an L sign for {hold_seconds:g}s to trigger {photobooth_url}/api/actions/{trigger_action}")
+    print(f"Hold a thumbs-up for {hold_seconds:g}s to trigger {photobooth_url}/api/actions/{trigger_action}")
 
     try:
         while True:
@@ -304,15 +305,17 @@ def main():
             image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(small, cv2.COLOR_BGR2RGB))
             last_ts = max(last_ts + 1, int(now * 1000))       # VIDEO mode needs increasing timestamps
             result = landmarker.detect_for_video(image, last_ts)
-            # Geometry on metric world landmarks (no perspective squash); drawing on image ones.
-            hands = [(lm, is_l_sign([(p.x, p.y, p.z) for p in world]))
+            # Hand shape from metric world landmarks (no perspective squash); "up" and drawing
+            # from the image landmarks (normalised, so scale back to pixels for true angles).
+            hands = [(lm, is_thumbs_up([(p.x, p.y, p.z) for p in world],
+                                       [(p.x * frame_width, p.y * frame_height) for p in lm]))
                      for lm, world in zip(result.hand_landmarks, result.hand_world_landmarks)]
-            l_seen = any(is_l for _, is_l in hands)
+            gesture_seen = any(hit for _, hit in hands)
 
             idle_for = booth.idle_for() if booth else math.inf
             overlay_on = idle_for >= cooldown_seconds and now >= hide_until
             if need_release:
-                if l_seen:
+                if gesture_seen:
                     released_since = None
                 elif released_since is None:
                     released_since = now
@@ -320,12 +323,12 @@ def main():
                     need_release = False
             armed = overlay_on and not need_release
             if armed:
-                progress = hold.update(l_seen, now)
+                progress = hold.update(gesture_seen, now)
             else:
                 hold.reset()
                 progress = 0.0
 
-            if armed and l_seen and progress >= 1.0:
+            if armed and gesture_seen and progress >= 1.0:
                 if booth:
                     threading.Thread(target=trigger_capture, daemon=True).start()
                 else:
@@ -339,8 +342,8 @@ def main():
 
             out = frame.copy() if overlay_on else frame
             if overlay_on:
-                for landmarks, is_l in hands:
-                    draw_hand(out, landmarks, COLOR_L if is_l else COLOR_HAND, progress if is_l else 0.0)
+                for landmarks, hit in hands:
+                    draw_hand(out, landmarks, COLOR_ACTIVE if hit else COLOR_HAND, progress if hit else 0.0)
             if vcam:
                 vcam.send(out)
 
@@ -348,8 +351,8 @@ def main():
                 # The preview always shows the skeleton, even while the stream is kept clean.
                 if not overlay_on:
                     out = frame.copy()
-                    for landmarks, is_l in hands:
-                        draw_hand(out, landmarks, COLOR_L if is_l else COLOR_HAND)
+                    for landmarks, hit in hands:
+                        draw_hand(out, landmarks, COLOR_ACTIVE if hit else COLOR_HAND)
                 view = cv2.flip(out, 1)                         # mirror, like the booth UI
                 if booth and not booth.connected:
                     status = "photobooth-app offline"
@@ -358,11 +361,11 @@ def main():
                 elif not overlay_on:
                     status = f"cooldown {cooldown_seconds - idle_for:.1f}s"
                 elif need_release:
-                    status = "drop the L to re-arm"
+                    status = "lower the thumb to re-arm"
                 elif progress > 0:
-                    status = f"holding L {progress * hold_seconds:.1f}/{hold_seconds:g}s"
+                    status = f"holding thumbs-up {progress * hold_seconds:.1f}/{hold_seconds:g}s"
                 else:
-                    status = "ready - show an L"
+                    status = "ready - show a thumbs-up"
                 draw_status(view, status)
                 cv2.imshow("Gesture trigger (preview)", view)
                 if cv2.waitKey(1) & 0xFF == ord("q"):

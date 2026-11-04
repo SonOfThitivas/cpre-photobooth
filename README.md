@@ -16,7 +16,7 @@ cpre-photobooth/
 │  ├─ photobooth-data/    photobooth-app's config, userdata, media, database
 │  └─ token.json, client_secret.json   (gitignored)
 ├─ gesture/               uv project → gesture/.venv
-│  └─ gesture_trigger.py  "L" hand-sign capture trigger
+│  └─ gesture_trigger.py  thumbs-up capture trigger
 └─ docs/
 ```
 
@@ -33,7 +33,7 @@ Two processes run side by side in `booth/`:
 
 This keeps the "one folder + one QR per session" experience, and by talking to the Google Drive API directly it avoids the rclone/native-sharing bugs in photobooth-app 9's synchronizer.
 
-A third process, **`gesture/gesture_trigger.py`**, makes the booth hands-free: hold an **L** hand sign for 3 seconds to start a capture. It owns the webcam and feeds photobooth-app through the OBS Virtual Camera. See [docs/GESTURE.md](docs/GESTURE.md).
+A third process, **`gesture/gesture_trigger.py`**, makes the booth hands-free: hold a **thumbs-up** for 3 seconds to start a capture. It owns the webcam and feeds photobooth-app through the OBS Virtual Camera. See [docs/GESTURE.md](docs/GESTURE.md).
 
 ## Why OAuth instead of a service account
 
@@ -127,7 +127,7 @@ cd booth
 uv run main.py
 ```
 
-Show an L for 3 seconds (or press the on-screen button); `main.py` creates the Drive sub-folder, uploads the images, and pops the QR to the shared folder.
+Show a thumbs-up for 3 seconds (or press the on-screen button); `main.py` creates the Drive sub-folder, uploads the images, and pops the QR to the shared folder.
 
 **Touch-only booth** (no gesture tab): set photobooth-app's camera `device_identifier` back to your webcam (e.g. `"Integrated Webcam"`) in its admin UI or `config.json`, and run only tabs 2 and 3.
 

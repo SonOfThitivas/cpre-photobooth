@@ -1,7 +1,7 @@
-# Hands-free trigger: hold an "L" sign
+# Hands-free trigger: hold a thumbs-up
 
-`gesture/gesture_trigger.py` lets guests start a capture without touching the screen: hold an
-**L** hand sign (thumb and index finger out, other fingers curled; either hand) for **3 seconds**.
+`gesture/gesture_trigger.py` lets guests start a capture without touching the screen: hold a
+**thumbs-up** (thumb pointing up, other fingers curled into a fist; either hand) for **3 seconds**.
 It runs as a third process next to photobooth-app and `main.py`, and changes neither of them.
 
 ## How it fits in
@@ -10,7 +10,7 @@ It runs as a third process next to photobooth-app and `main.py`, and changes nei
  Physical webcam ──▶ gesture_trigger.py ──pyvirtualcam──▶ "OBS Virtual Camera" ──▶ photobooth-app 9
                      (gesture/.venv)                                               (camera backend:
                      • MediaPipe hand landmarks                                     WebcamPyav, dshow)
-                     • L held 3 s ──── GET /api/actions/collage/0 ──────────────────▶ starts the job
+                     • 👍 held 3 s ─── GET /api/actions/collage/0 ──────────────────▶ starts the job
                      • overlay on/off ◀── GET /api/sse (ProcessStateinfo) ─────────── job state
                                                                                         │ writes images
                                                                                         ▼
@@ -33,18 +33,20 @@ It runs as a third process next to photobooth-app and `main.py`, and changes nei
   so a capture started from the screen is never labelled either.
 - **No text in the stream.** photobooth-app mirrors its live preview (`livestream_mirror_effect`),
   so the stream overlay is shapes only. Status text appears only in the optional local preview window.
-- **Re-arm.** After a session the guest must lower the L (about 0.5 s) before the trigger
+- **Re-arm.** After a session the guest must lower the thumb (about 0.5 s) before the trigger
   arms again, so someone still holding the pose can't start a second session by accident.
 
-### The L rule
+### The thumbs-up rule
 
-Computed on MediaPipe's metric *world* landmarks (no perspective squash), relative geometry only,
-so it works for left or right hand, mirrored, and rotated:
+The hand's shape is checked on MediaPipe's metric *world* landmarks (no perspective squash);
+"up" is checked on the *image* landmarks, so it means up in the camera picture. Works for
+left or right hand:
 
-- index finger straight (bend < 40°) and pointing away from the wrist;
-- middle, ring and pinky curled (bend > 80°, or tip closer to the wrist than the middle joint);
-- thumb straight (< 45°) and reaching out (tip farther than 0.55 × palm length from the index knuckle);
-- thumb and index finger 50–130° apart.
+- index, middle, ring and pinky curled (bend > 80°, or tip closer to the wrist than the middle joint);
+- thumb straight (bend < 45°);
+- thumb pointing up: within 40° of vertical, so thumbs-down and sideways thumbs don't count;
+- thumb tip above every finger joint by at least 0.3 × palm length, so a fist with the thumb
+  resting on it doesn't count.
 
 The 3 s hold tolerates detection dropouts of up to 0.35 s. Thresholds are constants at the top
 of `gesture_trigger.py`; `gesture/tests/` covers the rule and the hold timer on synthetic hands.

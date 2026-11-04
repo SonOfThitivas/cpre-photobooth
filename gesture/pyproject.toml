@@ -4,7 +4,7 @@
 [project]
 name = "photobooth-gesture"
 version = "0.1.0"
-description = "Hold an L hand sign for 3 s to start a photobooth-app capture"
+description = "Hold a thumbs-up for 3 s to start a photobooth-app capture"
 requires-python = ">=3.11"
 dependencies = [
     "mediapipe==1.2.2",
