@@ -155,7 +155,8 @@ def preflight(env, gesture):
 
     url = setting(env, "PHOTOBOOTH_URL", "http://localhost:8000").rstrip("/")
     if url_answers(url):
-        errors.append(f"Something already answers at {url}. Is photobooth-app already running? Stop it first.")
+        errors.append(f"Something already answers at {url}. Is photobooth-app already running? "
+                      "Stop leftover booth processes with: uv run stop.py")
 
     return errors, warnings
 

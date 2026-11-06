@@ -18,6 +18,7 @@ cpre-photobooth/
 ├─ gesture/               uv project → gesture/.venv
 │  └─ gesture_trigger.py  thumbs-up capture trigger
 ├─ run.py                 starts all three services and keeps them running (stdlib only)
+├─ stop.py                stops booth processes left over from an earlier start
 └─ docs/
 ```
 
@@ -129,6 +130,14 @@ Open `http://localhost:8000`, show a thumbs-up for 3 seconds (or press the on-sc
 4. **Logs** every line to the console, prefixed `[gesture]` / `[photobooth]` / `[uploader]`, and to `logs/<service>.log` (gitignored). Supervisor messages (starts, crashes, restarts) are in `logs/run.log`.
 
 `python run.py` works too, since it needs no packages.
+
+**"WinError 10048" / port 8000 already in use:** an earlier start is still running, usually because its terminal was closed instead of stopped with Ctrl+C. Stop the leftovers, then start again:
+
+```bash
+uv run stop.py
+```
+
+It stops only this repo's processes (photobooth-app, `main.py`, `gesture_trigger.py`, `run.py`); `--dry-run` lists them without stopping anything. If an unrelated program holds port 8000, it says so and leaves it running.
 
 **Touch-only booth:** `--no-gesture` needs photobooth-app's camera `device_identifier` set back to your webcam (e.g. `"Integrated Webcam"`) in its admin UI or `config.json`. `run.py` checks this and won't start until it matches.
 
