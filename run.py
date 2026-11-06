@@ -10,7 +10,10 @@
 A supervisor only: standard library, imports nothing from booth/ or gesture/. Each service
 is started with `uv run` in its own folder -- so in its own .venv -- exactly as by hand.
 
-  1. checks .env, the Google token, the project .venvs and photobooth-app's camera setting
+  1. checks .env, the Google token, the project .venvs and photobooth-app's camera setting,
+     then writes CAMERA_WIDTH / CAMERA_HEIGHT / CAMERA_FPS from .env into photobooth-app's
+     config.json and hands the same values to the gesture trigger -- .env is the one place to
+     set the camera resolution and frame rate
   2. starts the gesture trigger and waits until it streams to the virtual camera
   3. starts photobooth-app and waits until its web UI answers
   4. starts the uploader (booth/main.py)
@@ -78,18 +81,89 @@ def setting(env, name, default=""):
     return value or default
 
 
-def camera_devices(config):
-    """device_identifier of every camera backend photobooth-app uses (stills, video, multicam)."""
+def active_backends(config):
+    """backend_config of every enabled camera backend photobooth-app uses (stills, video, multicam)."""
     cameras = config.get("cameras") or {}
     backends = cameras.get("group_backends") or []
-    devices = set()
+    used = []
     for key in ("index_backend_stills", "index_backend_video", "index_backend_multicam"):
         index = cameras.get(key, 0)
         if isinstance(index, int) and 0 <= index < len(backends) and backends[index].get("enabled", True):
-            device = (backends[index].get("backend_config") or {}).get("device_identifier")
-            if device is not None:
-                devices.add(str(device))
-    return devices
+            backend = backends[index].get("backend_config")
+            if isinstance(backend, dict) and not any(backend is b for b in used):
+                used.append(backend)
+    return used
+
+
+def camera_devices(config):
+    """device_identifier of every camera backend photobooth-app uses (stills, video, multicam)."""
+    return {str(b["device_identifier"]) for b in active_backends(config)
+            if b.get("device_identifier") is not None}
+
+
+# (.env name, older name still accepted, photobooth-app config.json field, default).
+# The defaults match gesture_trigger.py's, so leaving them unset keeps both sides in step too.
+CAMERA_SETTINGS = (
+    ("CAMERA_WIDTH", "GESTURE_WIDTH", "cam_resolution_width", 1280),
+    ("CAMERA_HEIGHT", "GESTURE_HEIGHT", "cam_resolution_height", 720),
+    ("CAMERA_FPS", "GESTURE_FPS", "cam_framerate", 30),
+)
+
+
+def camera_mode(env):
+    """{config.json field: value} from .env. Raises ValueError naming the bad setting."""
+    mode = {}
+    for name, old, field, default in CAMERA_SETTINGS:
+        source, raw = next(((n, setting(env, n)) for n in (name, old) if setting(env, n)),
+                           (name, str(default)))
+        try:
+            value = int(raw)
+        except ValueError:
+            value = 0
+        if value < 1:
+            raise ValueError(f"{source} in .env must be a whole number above 0, got {raw!r}.")
+        mode[field] = value
+    return mode
+
+
+def camera_env(mode):
+    """The CAMERA_* variables for the services, so the gesture trigger uses exactly these values."""
+    return {name: str(mode[field]) for name, _, field, _ in CAMERA_SETTINGS}
+
+
+def describe_mode(values):
+    w, h, fps = (values.get(field, "?") for _, _, field, _ in CAMERA_SETTINGS)
+    return f"{w}x{h}@{fps}"
+
+
+def sync_camera(path, mode):
+    """Write mode into every active webcam backend in photobooth-app's config.json.
+
+    Returns (changes, skipped): one 'WebcamPyav 1920x1080@30 -> 1280x720@30' line per backend
+    changed, and the backend_type of each one without these fields (a DSLR, say), left alone.
+    The file is rewritten only when something changed, after a config.json_backup-<time> copy
+    (photobooth-app's own backup naming, so it prunes these too), in the same layout
+    photobooth-app writes and with the file's own line endings.
+    """
+    raw = path.read_bytes().decode("utf-8-sig")
+    config = json.loads(raw)
+    changes, skipped = [], []
+    for backend in active_backends(config):
+        kind = backend.get("backend_type", "camera")
+        if not all(field in backend for field in mode):
+            skipped.append(kind)
+        elif any(backend[field] != value for field, value in mode.items()):
+            before = describe_mode(backend)
+            backend.update(mode)
+            changes.append(f"{kind} {before} -> {describe_mode(backend)}")
+    if changes:
+        shutil.copy2(path, path.with_name(f"{path.name}_backup-{datetime.now():%Y%m%d-%H%M%S}"))
+        newline = "\r\n" if "\r\n" in raw else "\n"
+        text = json.dumps(config, indent=2, ensure_ascii=False).replace("\n", newline)
+        tmp = path.with_name(f"{path.name}.tmp")
+        tmp.write_bytes(text.encode("utf-8"))
+        os.replace(tmp, path)
+    return changes, skipped
 
 
 def url_answers(url, timeout=1.0):
@@ -129,6 +203,11 @@ def preflight(env, gesture):
             errors.append(f"Neither {rel(token)} nor {rel(secret)} exists, so the uploader can't "
                           "sign in to Google Drive. Copy token.json from another booth, or put the "
                           "Desktop OAuth client_secret.json in booth/.")
+
+    try:
+        camera_mode(env)
+    except ValueError as error:
+        errors.append(str(error))
 
     vcam = setting(env, "GESTURE_VIRTUAL_CAMERA", "OBS Virtual Camera")
     if not CONFIG_JSON.exists():
@@ -393,10 +472,27 @@ def main(argv=None):
         out.event("not starting")
         return 1
 
+    # Before photobooth-app starts: it reads config.json once at startup (preflight made sure
+    # nothing answers on its port), so it can't overwrite this from memory.
+    mode = camera_mode(env)
+    if CONFIG_JSON.exists():
+        try:
+            changes, skipped = sync_camera(CONFIG_JSON, mode)
+        except (OSError, ValueError) as error:
+            out.event(f"error: could not set the camera resolution in {rel(CONFIG_JSON)}: {error}")
+            out.event("not starting")
+            return 1
+        for change in changes:
+            out.event(f"camera set from .env in {rel(CONFIG_JSON)}: {change}")
+        for kind in skipped:
+            out.event(f"warning: photobooth-app's {kind} camera has no resolution/fps fields; "
+                      "CAMERA_WIDTH/HEIGHT/FPS from .env not applied to it")
+    out.event(f"camera {describe_mode(mode)} (CAMERA_WIDTH/HEIGHT/FPS in .env)")
+
     services = build_services(env, gesture)
     out.event(f"running {', '.join(s.name for s in services)}; Ctrl+C stops everything; "
               f"logs in {rel(LOG_DIR)}/")
-    return Supervisor(services, out, child_env()).run()
+    return Supervisor(services, out, dict(child_env(), **camera_env(mode))).run()
 
 
 if __name__ == "__main__":

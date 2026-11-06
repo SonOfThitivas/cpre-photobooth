@@ -124,12 +124,23 @@ Open `http://localhost:8000`, show a thumbs-up for 3 seconds (or press the on-sc
 
 `run.py` is a small supervisor that uses only the standard library. It imports nothing from `booth/` or `gesture/`; it starts each service with `uv run` in its own folder, so each still runs in its own `.venv`. It:
 
-1. **Checks before starting**, and refuses to start with a clear message if something is wrong: `uv` and both `.venv`s exist, `.env` has `MAIN_FOLDER_ID`, `booth/token.json` (or `client_secret.json`) exists, photobooth-app's camera matches the mode (`"OBS Virtual Camera"` with the gesture trigger, your real webcam with `--no-gesture`), and nothing is already running on port 8000.
-2. **Starts in order, waiting until each one is really ready:** the gesture trigger (until it streams to the virtual camera), then photobooth-app (until `http://localhost:8000` answers), then the uploader.
-3. **Restarts any service that exits**, waiting 1 s, 2 s, 4 s … up to 60 s between tries, so a permanently broken one doesn't spin. photobooth-app reads the gesture trigger's virtual camera, so while the gesture trigger is down photobooth-app is stopped too, and started again once the camera streams.
-4. **Logs** every line to the console, prefixed `[gesture]` / `[photobooth]` / `[uploader]`, and to `logs/<service>.log` (gitignored). Supervisor messages (starts, crashes, restarts) are in `logs/run.log`.
+1. **Checks before starting**, and refuses to start with a clear message if something is wrong: `uv` and both `.venv`s exist, `.env` has `MAIN_FOLDER_ID`, `booth/token.json` (or `client_secret.json`) exists, photobooth-app's camera matches the mode (`"OBS Virtual Camera"` with the gesture trigger, your real webcam with `--no-gesture`), the camera resolution in `.env` is valid, and nothing is already running on port 8000.
+2. **Sets the camera resolution and frame rate from `.env`** (see below) in photobooth-app's `config.json`, and passes the same values to the gesture trigger.
+3. **Starts in order, waiting until each one is really ready:** the gesture trigger (until it streams to the virtual camera), then photobooth-app (until `http://localhost:8000` answers), then the uploader.
+4. **Restarts any service that exits**, waiting 1 s, 2 s, 4 s … up to 60 s between tries, so a permanently broken one doesn't spin. photobooth-app reads the gesture trigger's virtual camera, so while the gesture trigger is down photobooth-app is stopped too, and started again once the camera streams.
+5. **Logs** every line to the console, prefixed `[gesture]` / `[photobooth]` / `[uploader]`, and to `logs/<service>.log` (gitignored). Supervisor messages (starts, crashes, restarts) are in `logs/run.log`.
 
 `python run.py` works too, since it needs no packages.
+
+**Camera resolution and frame rate:** set them once, in `.env`:
+
+```
+CAMERA_WIDTH=1280
+CAMERA_HEIGHT=720
+CAMERA_FPS=30
+```
+
+These are the defaults when unset. On every start, before photobooth-app is launched, `run.py` writes them into the active camera's `cam_resolution_width` / `cam_resolution_height` / `cam_framerate` in `booth/photobooth-data/config/config.json`, and the gesture trigger streams the virtual camera at the same size. When it changes `config.json` it logs the change (e.g. `WebcamPyav 1920x1080@30 -> 1280x720@30`) and keeps the previous file as `config.json_backup-<time>` (gitignored). `.env` wins: a resolution changed in photobooth-app's admin UI is replaced on the next `run.py` start. The older `GESTURE_WIDTH` / `GESTURE_HEIGHT` / `GESTURE_FPS` names still work. The collage `canvas_width` / `canvas_height` are **not** changed: they are the finished collage's size, and the photo slots in `merge_definition` are placed in canvas pixels, so change those yourself in the admin UI.
 
 **"WinError 10048" / port 8000 already in use:** an earlier start is still running, usually because its terminal was closed instead of stopped with Ctrl+C. Stop the leftovers, then start again:
 
@@ -164,7 +175,7 @@ cd booth
 uv run main.py
 ```
 
-Touch-only booth by hand: set the camera back to your webcam as above, and run only tabs 2 and 3. Started by hand, nothing restarts a service that crashes.
+Touch-only booth by hand: set the camera back to your webcam as above, and run only tabs 2 and 3. Started by hand, nothing restarts a service that crashes, and nothing copies `CAMERA_WIDTH` / `CAMERA_HEIGHT` / `CAMERA_FPS` into `config.json` — after changing them, start once with `uv run run.py` (or set the same values in photobooth-app's admin UI).
 
 ## Tuning to your app version / collage
 

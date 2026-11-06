@@ -88,9 +88,16 @@ booth preview. After raising it, watch the booth preview with a full group in fr
 README's **Run**). It waits for this script's `Streaming to virtual camera` line before it
 starts photobooth-app, and restarts photobooth-app whenever this script restarts.
 
-By hand: start the gesture tab **first**, so the virtual camera is already streaming at 1280×720
-when photobooth-app opens it; then photobooth-app and `main.py` in their own tabs. If
-photobooth-app was started first, restart it.
+The stream's size and frame rate are `CAMERA_WIDTH` / `CAMERA_HEIGHT` / `CAMERA_FPS` in `.env`
+(default 1280×720 at 30 fps; the older `GESTURE_WIDTH` / `GESTURE_HEIGHT` / `GESTURE_FPS` still
+work). `run.py` writes the same values into photobooth-app's camera in `config.json` before it
+starts it, so the two always match. If the webcam can't deliver that size, frames are resized
+to it.
+
+By hand: start the gesture tab **first**, so the virtual camera is already streaming when
+photobooth-app opens it; then photobooth-app and `main.py` in their own tabs. If
+photobooth-app was started first, restart it. By hand, `config.json` isn't updated from `.env`:
+after changing the camera settings, start once with `uv run run.py`.
 
 ```bash
 cd gesture

@@ -30,9 +30,12 @@ trigger_action = os.getenv("GESTURE_ACTION", "collage/0")
 # The physical webcam, by DirectShow name (as listed in photobooth-app's camera dropdown) or index.
 camera_name = os.getenv("GESTURE_CAMERA", "Integrated Webcam")
 virtual_camera = os.getenv("GESTURE_VIRTUAL_CAMERA", "OBS Virtual Camera")
-frame_width = int(os.getenv("GESTURE_WIDTH", "1280"))           # keep in sync with the photobooth
-frame_height = int(os.getenv("GESTURE_HEIGHT", "720"))          # camera backend's cam_resolution_*
-frame_fps = int(os.getenv("GESTURE_FPS", "30"))
+# Size and frame rate of the virtual camera stream. run.py writes the same CAMERA_* values into
+# photobooth-app's config.json (cam_resolution_* / cam_framerate) before it starts it. The older
+# GESTURE_WIDTH / GESTURE_HEIGHT / GESTURE_FPS names still work.
+frame_width = int(os.getenv("CAMERA_WIDTH") or os.getenv("GESTURE_WIDTH") or "1280")
+frame_height = int(os.getenv("CAMERA_HEIGHT") or os.getenv("GESTURE_HEIGHT") or "720")
+frame_fps = int(os.getenv("CAMERA_FPS") or os.getenv("GESTURE_FPS") or "30")
 hold_seconds = float(os.getenv("GESTURE_HOLD_SECONDS", "3"))
 # After a session ends, wait this long before showing the overlay / arming the trigger again.
 cooldown_seconds = float(os.getenv("GESTURE_COOLDOWN_SECONDS", "3"))
