@@ -12,12 +12,16 @@ Two **independent uv projects** — each has its own `pyproject.toml`, `uv.lock`
 cpre-photobooth/
 ├─ .env, .env.example     shared settings for both projects
 ├─ booth/                 uv project → booth/.venv
-│  ├─ main.py             Drive uploader + QR
+│  ├─ main.py             Drive uploader (entry point)
+│  ├─ uploader/           its modules: SSE, sessions, folder pool, links, Drive worker
+│  ├─ tests/              uploader + plugin tests
+│  ├─ photobooth-data/plugins/drive_share/   shows the Drive link as photobooth-app's QR
 │  ├─ photobooth-data/    photobooth-app's config, userdata, media, database
 │  └─ token.json, client_secret.json   (gitignored)
 ├─ gesture/               uv project → gesture/.venv
 │  └─ gesture_trigger.py  thumbs-up capture trigger
 ├─ run.py                 starts all three services and keeps them running (stdlib only)
+├─ stop.py                stops booth processes left over from an earlier start
 └─ docs/
 ```
 
@@ -26,13 +30,14 @@ cpre-photobooth/
 Two processes run side by side in `booth/`:
 
 1. **`photobooth-app` 9.0.0** — camera + capture UI at `http://localhost:8000`. On each session it writes finished images into `booth/photobooth-data/media/processed_full/`.
-2. **`main.py`** — watches that folder with `watchdog`. When a session's images land it:
-   - creates a **new Google Drive sub-folder** (named with a timestamp) under `MAIN_FOLDER_ID`,
-   - makes it **public** (anyone with the link: reader),
-   - **uploads** the captures into it,
-   - shows a **QR code** to the shared folder link.
+2. **`main.py`** — the uploader. It follows photobooth-app's job over its `/api/sse` event stream and watches that folder with `watchdog`. For each session it:
+   - takes a Google Drive sub-folder that was **created and made public in advance** (anyone with the link: reader) and renames it to the session's timestamp, under `MAIN_FOLDER_ID`,
+   - links every file name and media id of the session to that folder, and serves those links on `127.0.0.1:8765`,
+   - **uploads** the captures into it when the job finishes.
 
-This keeps the "one folder + one QR per session" experience, and by talking to the Google Drive API directly it avoids the rclone/native-sharing bugs in photobooth-app 9's synchronizer.
+   photobooth-app shows the **QR code** itself, in the presenter after a capture and in the gallery: its `drive_share` user plugin (`booth/photobooth-data/plugins/drive_share/`) asks the uploader for the item's link. No separate QR window is opened.
+
+This keeps the "one folder + one QR per session" experience, with the QR on screen as soon as the collage is presented, and by talking to the Google Drive API directly it avoids the rclone/native-sharing bugs in photobooth-app 9's synchronizer.
 
 A third process, **`gesture/gesture_trigger.py`**, makes the booth hands-free: hold a **thumbs-up** for 3 seconds to start a capture. It owns the webcam and feeds photobooth-app through the OBS Virtual Camera. See [docs/GESTURE.md](docs/GESTURE.md).
 
@@ -119,16 +124,35 @@ Touch-only booth (no gesture trigger):
 uv run run.py --no-gesture
 ```
 
-Open `http://localhost:8000`, show a thumbs-up for 3 seconds (or press the on-screen button); `main.py` creates the Drive sub-folder, uploads the images, and pops the QR to the shared folder. **Ctrl+C** stops everything.
+Open `http://localhost:8000`, show a thumbs-up for 3 seconds (or press the on-screen button); the presenter shows the collage with the QR code to its Drive folder, and `main.py` uploads the images. **Ctrl+C** stops everything.
 
 `run.py` is a small supervisor that uses only the standard library. It imports nothing from `booth/` or `gesture/`; it starts each service with `uv run` in its own folder, so each still runs in its own `.venv`. It:
 
-1. **Checks before starting**, and refuses to start with a clear message if something is wrong: `uv` and both `.venv`s exist, `.env` has `MAIN_FOLDER_ID`, `booth/token.json` (or `client_secret.json`) exists, photobooth-app's camera matches the mode (`"OBS Virtual Camera"` with the gesture trigger, your real webcam with `--no-gesture`), and nothing is already running on port 8000.
-2. **Starts in order, waiting until each one is really ready:** the gesture trigger (until it streams to the virtual camera), then photobooth-app (until `http://localhost:8000` answers), then the uploader.
-3. **Restarts any service that exits**, waiting 1 s, 2 s, 4 s … up to 60 s between tries, so a permanently broken one doesn't spin. photobooth-app reads the gesture trigger's virtual camera, so while the gesture trigger is down photobooth-app is stopped too, and started again once the camera streams.
-4. **Logs** every line to the console, prefixed `[gesture]` / `[photobooth]` / `[uploader]`, and to `logs/<service>.log` (gitignored). Supervisor messages (starts, crashes, restarts) are in `logs/run.log`.
+1. **Checks before starting**, and refuses to start with a clear message if something is wrong: `uv` and both `.venv`s exist, `.env` has `MAIN_FOLDER_ID`, `booth/token.json` (or `client_secret.json`) exists, photobooth-app's camera matches the mode (`"OBS Virtual Camera"` with the gesture trigger, your real webcam with `--no-gesture`), the camera resolution in `.env` is valid, and nothing is already running on port 8000.
+2. **Sets the camera resolution and frame rate from `.env`** (see below) in photobooth-app's `config.json`, and passes the same values to the gesture trigger.
+3. **Starts in order, waiting until each one is really ready:** the gesture trigger (until it streams to the virtual camera), then photobooth-app (until `http://localhost:8000` answers), then the uploader.
+4. **Restarts any service that exits**, waiting 1 s, 2 s, 4 s … up to 60 s between tries, so a permanently broken one doesn't spin. photobooth-app reads the gesture trigger's virtual camera, so while the gesture trigger is down photobooth-app is stopped too, and started again once the camera streams.
+5. **Logs** every line to the console, prefixed `[gesture]` / `[photobooth]` / `[uploader]`, and to `logs/<service>.log` (gitignored). Supervisor messages (starts, crashes, restarts) are in `logs/run.log`.
 
 `python run.py` works too, since it needs no packages.
+
+**Camera resolution and frame rate:** set them once, in `.env`:
+
+```
+CAMERA_WIDTH=1280
+CAMERA_HEIGHT=720
+CAMERA_FPS=30
+```
+
+These are the defaults when unset. On every start, before photobooth-app is launched, `run.py` writes them into the active camera's `cam_resolution_width` / `cam_resolution_height` / `cam_framerate` in `booth/photobooth-data/config/config.json`, and the gesture trigger streams the virtual camera at the same size. When it changes `config.json` it logs the change (e.g. `WebcamPyav 1920x1080@30 -> 1280x720@30`) and keeps the previous file as `config.json_backup-<time>` (gitignored). `.env` wins: a resolution changed in photobooth-app's admin UI is replaced on the next `run.py` start. The older `GESTURE_WIDTH` / `GESTURE_HEIGHT` / `GESTURE_FPS` names still work. The collage `canvas_width` / `canvas_height` are **not** changed: they are the finished collage's size, and the photo slots in `merge_definition` are placed in canvas pixels, so change those yourself in the admin UI.
+
+**"WinError 10048" / port 8000 already in use:** an earlier start is still running, usually because its terminal was closed instead of stopped with Ctrl+C. Stop the leftovers, then start again:
+
+```bash
+uv run stop.py
+```
+
+It stops only this repo's processes (photobooth-app, `main.py`, `gesture_trigger.py`, `run.py`); `--dry-run` lists them without stopping anything. If an unrelated program holds port 8000, it says so and leaves it running.
 
 **Touch-only booth:** `--no-gesture` needs photobooth-app's camera `device_identifier` set back to your webcam (e.g. `"Integrated Webcam"`) in its admin UI or `config.json`. `run.py` checks this and won't start until it matches.
 
@@ -155,12 +179,14 @@ cd booth
 uv run main.py
 ```
 
-Touch-only booth by hand: set the camera back to your webcam as above, and run only tabs 2 and 3. Started by hand, nothing restarts a service that crashes.
+Touch-only booth by hand: set the camera back to your webcam as above, and run only tabs 2 and 3. Started by hand, nothing restarts a service that crashes, and nothing copies `CAMERA_WIDTH` / `CAMERA_HEIGHT` / `CAMERA_FPS` into `config.json` — after changing them, start once with `uv run run.py` (or set the same values in photobooth-app's admin UI).
 
 ## Tuning to your app version / collage
 
 - `WATCH_DIR` — the folder photobooth-app writes finished images to (default `media/processed_full`, unchanged in v9).
-- `SESSION_QUIET_SECONDS` — how long the watcher waits with no new file before treating a burst as one finished session (default `3`). A collage session writes several files (each individual shot **plus** the composite) over a second or two; the debounce groups them automatically, so you no longer hard-code a per-session count. Raise it only if a slow machine uploads before the collage file lands.
+- `SESSION_QUIET_SECONDS` — only used when the uploader can't follow photobooth-app's event stream (or files arrive outside a job): a burst of files is one session once no new file has appeared for this long (default `3`). Normally a session runs from the job's start to `finished`, with no count or timer to tune.
+- `PHOTOBOOTH_URL`, `LINK_SERVER_PORT`, `LINK_WAIT_SECONDS`, `LINKS_FILE` — see `.env.example` and [docs/PIPELINE.md](docs/PIPELINE.md).
+- photobooth-app's **Admin → UI settings → `gallery_show_qrcode`** must be on (it is in the committed `config.json`); `qrcode_text_above` / `qrcode_text_below` set the text around the QR.
 
 ## Other branches
 

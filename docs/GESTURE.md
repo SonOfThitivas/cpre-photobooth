@@ -51,6 +51,20 @@ left or right hand:
 The 3 s hold tolerates detection dropouts of up to 0.35 s. Thresholds are constants at the top
 of `gesture_trigger.py`; `gesture/tests/` covers the rule and the hold timer on synthetic hands.
 
+### How many hands
+
+`GESTURE_NUM_HANDS` (default `2`, minimum `1`) is the most hands MediaPipe tracks per frame;
+a thumbs-up on any of them triggers. MediaPipe sets **no maximum**. The practical limit is how
+many hands are large and clear enough in the frame to be found, so a higher value doesn't help
+with guests standing too far from the camera.
+
+With the default `2`, a group with more raised hands can miss a thumbs-up: once two hands are
+tracked, MediaPipe mostly stops looking for new ones. For groups, set about two per guest
+(e.g. `6` for three people). The cost: while fewer hands than the limit are tracked, palm
+detection runs on every frame, and each tracked hand adds a landmark pass. Everything runs in the
+loop that feeds the virtual camera, so too high a value on a slow laptop shows up as a choppy
+booth preview. After raising it, watch the booth preview with a full group in frame for stutter.
+
 ## Setup (once per booth)
 
 1. **OBS Studio** — install it from <https://obsproject.com/>; it provides the
@@ -74,9 +88,16 @@ of `gesture_trigger.py`; `gesture/tests/` covers the rule and the hold timer on 
 README's **Run**). It waits for this script's `Streaming to virtual camera` line before it
 starts photobooth-app, and restarts photobooth-app whenever this script restarts.
 
-By hand: start the gesture tab **first**, so the virtual camera is already streaming at 1280×720
-when photobooth-app opens it; then photobooth-app and `main.py` in their own tabs. If
-photobooth-app was started first, restart it.
+The stream's size and frame rate are `CAMERA_WIDTH` / `CAMERA_HEIGHT` / `CAMERA_FPS` in `.env`
+(default 1280×720 at 30 fps; the older `GESTURE_WIDTH` / `GESTURE_HEIGHT` / `GESTURE_FPS` still
+work). `run.py` writes the same values into photobooth-app's camera in `config.json` before it
+starts it, so the two always match. If the webcam can't deliver that size, frames are resized
+to it.
+
+By hand: start the gesture tab **first**, so the virtual camera is already streaming when
+photobooth-app opens it; then photobooth-app and `main.py` in their own tabs. If
+photobooth-app was started first, restart it. By hand, `config.json` isn't updated from `.env`:
+after changing the camera settings, start once with `uv run run.py`.
 
 ```bash
 cd gesture

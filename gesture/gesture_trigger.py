@@ -30,14 +30,23 @@ trigger_action = os.getenv("GESTURE_ACTION", "collage/0")
 # The physical webcam, by DirectShow name (as listed in photobooth-app's camera dropdown) or index.
 camera_name = os.getenv("GESTURE_CAMERA", "Integrated Webcam")
 virtual_camera = os.getenv("GESTURE_VIRTUAL_CAMERA", "OBS Virtual Camera")
-frame_width = int(os.getenv("GESTURE_WIDTH", "1280"))           # keep in sync with the photobooth
-frame_height = int(os.getenv("GESTURE_HEIGHT", "720"))          # camera backend's cam_resolution_*
-frame_fps = int(os.getenv("GESTURE_FPS", "30"))
+# Size and frame rate of the virtual camera stream. run.py writes the same CAMERA_* values into
+# photobooth-app's config.json (cam_resolution_* / cam_framerate) before it starts it. The older
+# GESTURE_WIDTH / GESTURE_HEIGHT / GESTURE_FPS names still work.
+frame_width = int(os.getenv("CAMERA_WIDTH") or os.getenv("GESTURE_WIDTH") or "1280")
+frame_height = int(os.getenv("CAMERA_HEIGHT") or os.getenv("GESTURE_HEIGHT") or "720")
+frame_fps = int(os.getenv("CAMERA_FPS") or os.getenv("GESTURE_FPS") or "30")
 hold_seconds = float(os.getenv("GESTURE_HOLD_SECONDS", "3"))
 # After a session ends, wait this long before showing the overlay / arming the trigger again.
 cooldown_seconds = float(os.getenv("GESTURE_COOLDOWN_SECONDS", "3"))
 # Hand detection runs on a downscaled copy; landmarks are normalised so drawing is unaffected.
 detect_width = int(os.getenv("GESTURE_DETECT_WIDTH", "640"))
+# Most hands tracked per frame (any one of them can trigger). MediaPipe has no upper limit; the
+# real ceiling is how many hands are big enough in the frame to be found. While fewer than this
+# are tracked, palm detection runs every frame, and each tracked hand costs one landmark pass.
+num_hands = int(os.getenv("GESTURE_NUM_HANDS", "2"))
+if num_hands < 1:
+    sys.exit(f"GESTURE_NUM_HANDS must be at least 1, got {num_hands}.")
 model_path = Path(os.getenv("GESTURE_MODEL", HERE / "models" / "hand_landmarker.task"))
 MODEL_URL = ("https://storage.googleapis.com/mediapipe-models/"
              "hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task")
@@ -272,7 +281,7 @@ def main():
     options = vision.HandLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=str(ensure_model())),
         running_mode=vision.RunningMode.VIDEO,
-        num_hands=2,
+        num_hands=num_hands,
         min_hand_detection_confidence=0.6,
         min_hand_presence_confidence=0.6,
         min_tracking_confidence=0.5)
@@ -286,6 +295,7 @@ def main():
     need_release = False        # after firing, the thumb must drop before the trigger re-arms
     released_since = None
     last_ts = 0
+    print(f"Tracking up to {num_hands} hand(s)")
     print(f"Hold a thumbs-up for {hold_seconds:g}s to trigger {photobooth_url}/api/actions/{trigger_action}")
 
     try:
