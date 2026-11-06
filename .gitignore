@@ -159,6 +159,9 @@ possible-dream-436907-s2-15ffd7fa994a.json
 libjpeg-turbo64
 ffmpeg-7.0.2-full_build
 booth/qr_code_folder/*.png
+# Uploader's saved share links (booth/main.py, LINKS_FILE)
+booth/links.json
+booth/links.json.tmp
 
 booth/photobooth-data/database
 booth/photobooth-data/log
