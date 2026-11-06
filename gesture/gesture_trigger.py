@@ -38,6 +38,12 @@ hold_seconds = float(os.getenv("GESTURE_HOLD_SECONDS", "3"))
 cooldown_seconds = float(os.getenv("GESTURE_COOLDOWN_SECONDS", "3"))
 # Hand detection runs on a downscaled copy; landmarks are normalised so drawing is unaffected.
 detect_width = int(os.getenv("GESTURE_DETECT_WIDTH", "640"))
+# Most hands tracked per frame (any one of them can trigger). MediaPipe has no upper limit; the
+# real ceiling is how many hands are big enough in the frame to be found. While fewer than this
+# are tracked, palm detection runs every frame, and each tracked hand costs one landmark pass.
+num_hands = int(os.getenv("GESTURE_NUM_HANDS", "2"))
+if num_hands < 1:
+    sys.exit(f"GESTURE_NUM_HANDS must be at least 1, got {num_hands}.")
 model_path = Path(os.getenv("GESTURE_MODEL", HERE / "models" / "hand_landmarker.task"))
 MODEL_URL = ("https://storage.googleapis.com/mediapipe-models/"
              "hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task")
@@ -272,7 +278,7 @@ def main():
     options = vision.HandLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=str(ensure_model())),
         running_mode=vision.RunningMode.VIDEO,
-        num_hands=2,
+        num_hands=num_hands,
         min_hand_detection_confidence=0.6,
         min_hand_presence_confidence=0.6,
         min_tracking_confidence=0.5)
@@ -286,6 +292,7 @@ def main():
     need_release = False        # after firing, the thumb must drop before the trigger re-arms
     released_since = None
     last_ts = 0
+    print(f"Tracking up to {num_hands} hand(s)")
     print(f"Hold a thumbs-up for {hold_seconds:g}s to trigger {photobooth_url}/api/actions/{trigger_action}")
 
     try:
