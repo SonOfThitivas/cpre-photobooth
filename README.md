@@ -4,7 +4,7 @@
 
 The original custom-uploader pipeline on **photobooth-app 9.0.0**, uploading to Google Drive with **OAuth** (so it works on a free Gmail account).
 
-## Repo layout
+## 📁 Repo layout
 
 Two **independent uv projects** — each has its own `pyproject.toml`, `uv.lock` and `.venv`. They are deliberately *not* a uv workspace, so photobooth-app's `opencv-python-headless` and MediaPipe's `opencv-contrib-python` never share an environment.
 
@@ -25,29 +25,61 @@ cpre-photobooth/
 └─ docs/
 ```
 
-## How it works
+## 🧩 System Architecture
 
-Two processes run side by side in `booth/`:
+Which service talks to which, and in which direction:
 
-1. **`photobooth-app` 9.0.0** — camera + capture UI at `http://localhost:8000`. On each session it writes finished images into `booth/photobooth-data/media/processed_full/`.
-2. **`main.py`** — the uploader. It follows photobooth-app's job over its `/api/sse` event stream and watches that folder with `watchdog`. For each session it:
-   - takes a Google Drive sub-folder that was **created and made public in advance** (anyone with the link: reader) and renames it to the session's timestamp, under `MAIN_FOLDER_ID`,
-   - links every file name and media id of the session to that folder, and serves those links on `127.0.0.1:8765`,
-   - **uploads** the captures into it when the job finishes.
+![System architecture: the gesture detector, photobooth-app and the uploader on the booth PC, and the nine connections between them](docs/images/ARCHITECTURE-01-html.png)
 
-   photobooth-app shows the **QR code** itself, in the presenter after a capture and in the gallery: its `drive_share` user plugin (`booth/photobooth-data/plugins/drive_share/`) asks the uploader for the item's link. No separate QR window is opened.
+The figure has three rows, one per service, and nine connections:
 
-This keeps the "one folder + one QR per session" experience, with the QR on screen as soon as the collage is presented, and by talking to the Google Drive API directly it avoids the rclone/native-sharing bugs in photobooth-app 9's synchronizer.
+- **Gesture detector** — reads the webcam and forwards every frame to the OBS Virtual Camera, which is photobooth-app's camera input. A thumbs-up held for 3 seconds sends `GET /api/actions/collage/0` to photobooth-app.
+- **photobooth-app** — publishes its job state on the `/api/sse` event stream, which the gesture detector and the uploader both follow, and writes the finished images into `processed_full/`. Its `drive_share` plugin sends `GET /links` to the uploader's link server to get the QR link for the kiosk UI.
+- **Uploader** — picks up the finished images and uploads them through the Drive API into one public Google Drive folder per session. It is the only service that talks to Google Drive; everything else stays on `localhost`.
 
-A third process, **`gesture/gesture_trigger.py`**, makes the booth hands-free: hold a **thumbs-up** for 3 seconds to start a capture. It owns the webcam and feeds photobooth-app through the OBS Virtual Camera. See [docs/GESTURE.md](docs/GESTURE.md).
+The image is exported from the figure in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); edit it there.
 
-## Why OAuth instead of a service account
+## 🔄 How it works
 
-A **service account has no Drive storage quota**, so it cannot upload files to a personal (`@gmail.com`) Drive — uploads fail with `storageQuotaExceeded`. Uploading **as your own Google user (OAuth)** charges the files to your account's 15 GB, which works on free Gmail. A service account only works if you have Google **Workspace** + a **Shared Drive**.
+Three services run side by side. `run.py` starts them in this order and restarts any that exits.
 
-`main.py` uses `token.json`, which is **portable**: authorize once (browser), then copy `token.json` to your other booths — they run headlessly with no browser step.
+### 👍 1. Gesture detector — `gesture/gesture_trigger.py`
 
-## Prerequisites
+Makes the booth hands-free. It runs in `gesture/.venv`.
+
+- **Owns the webcam.** On Windows only one process can open the camera, so it reads the webcam and forwards every frame to the **OBS Virtual Camera**, which photobooth-app uses as its camera.
+- **Detects the gesture.** MediaPipe finds the hands in each frame. A **thumbs-up held for 3 seconds** sends `GET /api/actions/collage/0` to photobooth-app, the same request the on-screen button sends.
+- **Keeps photos clean.** It follows photobooth-app's `/api/sse` event stream and draws the hand skeleton and progress ring only while the booth is idle, so they never appear in a photo.
+
+It is optional: with `uv run run.py --no-gesture` photobooth-app reads the webcam directly and guests use the on-screen button. See [docs/GESTURE.md](docs/GESTURE.md).
+
+### 📸 2. photobooth-app 9.0.0
+
+The camera, countdown, collage and kiosk UI at `http://localhost:8000`. It runs in `booth/.venv`, from `booth/photobooth-data/`.
+
+- **Runs the capture job** and writes the finished images into `booth/photobooth-data/media/processed_full/`.
+- **Publishes the job state** (start, countdown, capture, present, finished) on `/api/sse`. The other two services follow it.
+- **Shows the QR code itself**, in the presenter after a capture and in the gallery. Its `drive_share` user plugin (`booth/photobooth-data/plugins/drive_share/`) gets the item's link from the uploader. No separate QR window is opened.
+
+### ⬆️ 3. Uploader — `booth/main.py`
+
+Puts each session into one public Google Drive folder. It runs in `booth/.venv` and never touches the camera. It follows photobooth-app's job over `/api/sse` and watches `processed_full/` with `watchdog`. For each session it:
+
+- takes a Google Drive sub-folder that was **created and made public in advance** (anyone with the link: reader) and renames it to the session's timestamp, under `MAIN_FOLDER_ID`,
+- links every file name and media id of the session to that folder, and serves those links to the `drive_share` plugin on `127.0.0.1:8765`,
+- **uploads** the captures into the folder when the job finishes.
+
+### 🎬 One session, start to finish
+
+1. A guest holds a thumbs-up for 3 seconds (or presses the on-screen button), and photobooth-app starts the job.
+2. The uploader sees the job start and takes the prepared Drive folder, so the session's link is known before the first photo.
+3. photobooth-app counts down, captures, builds the collage and writes the images. The uploader adds each new file to the session.
+4. photobooth-app presents the collage and asks the plugin for its link. The **QR code** to the session's folder is on screen at once.
+5. The job finishes. The uploader uploads the session's images into the folder, and the gesture overlay returns after a short cooldown.
+
+This keeps the "one folder + one QR per session" experience, with the QR on screen as soon as the collage is presented, and by talking to the Google Drive API directly it avoids the rclone/native-sharing bugs in photobooth-app 9's synchronizer. For the full pipeline see [docs/PIPELINE.md](docs/PIPELINE.md).
+
+## ✅ Prerequisites
 
 - **[uv](https://docs.astral.sh/uv/)** — installs Python and both projects' dependencies. `booth/.python-version` pins **Python 3.14** (the verified build); uv downloads it if it's missing.
 - **photobooth-app 9.0.0** (installed by `uv sync`). No separate `ffmpeg` / `libjpeg-turbo` needed — v9 bundles them.
@@ -57,7 +89,7 @@ A **service account has no Drive storage quota**, so it cannot upload files to a
 - The **OAuth consent screen Published** ("In production"), so the refresh token doesn't expire every 7 days. Add your account as a test user if you keep it in Testing.
 - A **Drive folder** you own, to hold the session sub-folders → note its **folder ID** (from the URL).
 
-## Setup
+## 🔧 Setup
 
 Create both environments from their lockfiles:
 
@@ -87,15 +119,15 @@ SESSION_QUIET_SECONDS=3
 
 `token.json`, `client_secret.json`, and `.env` are **gitignored** — they are secrets. Never commit them.
 
-### First run — authorize once
+### 🔑 First run — authorize once
 
 Run `main.py` once; a browser opens → sign in → **Allow**. That writes `booth/token.json`. (If you see "Google hasn't verified this app", choose **Advanced → Go to … → Allow** — it's your own client.)
 
-### Running on another machine (new booth)
+### 💻 Running on another machine (new booth)
 
 A booth has **two** configs, with different portability:
 
-**1. The uploader (`main.py`) — fully portable.** On the new machine, set up both projects (see [Setup](#setup)) and copy over just:
+**1. The uploader (`main.py`) — fully portable.** On the new machine, set up both projects (see [Setup](#-setup)) and copy over just:
 
 - `booth/token.json` — makes the machine upload as *your* Google user with **no browser step** (it already contains the refresh token + client id/secret). All booths then upload into the same Drive folder.
 - `.env` — `MAIN_FOLDER_ID` is shared across booths.
@@ -110,7 +142,7 @@ You do **not** need `client_secret.json` on the extra machines once `token.json`
 
 > `config.json`, `token.json`, `client_secret.json`, and `.env` are all **gitignored** — copy them between machines manually (USB / secure transfer), never via the public repo.
 
-## Run
+## 🚀 Run
 
 From the repo root, one command starts all three services and keeps them running:
 
@@ -156,7 +188,7 @@ It stops only this repo's processes (photobooth-app, `main.py`, `gesture_trigger
 
 **Touch-only booth:** `--no-gesture` needs photobooth-app's camera `device_identifier` set back to your webcam (e.g. `"Integrated Webcam"`) in its admin UI or `config.json`. `run.py` checks this and won't start until it matches.
 
-### Run by hand (three terminals)
+### 🧰 Run by hand (three terminals)
 
 To work on one service, or to see each service in its own window, start them yourself in three Windows Terminal tabs from the repo root, in this order. No venv activation — `uv run` picks the right `.venv` from the folder you're in.
 
@@ -181,16 +213,15 @@ uv run main.py
 
 Touch-only booth by hand: set the camera back to your webcam as above, and run only tabs 2 and 3. Started by hand, nothing restarts a service that crashes, and nothing copies `CAMERA_WIDTH` / `CAMERA_HEIGHT` / `CAMERA_FPS` into `config.json` — after changing them, start once with `uv run run.py` (or set the same values in photobooth-app's admin UI).
 
-## Tuning to your app version / collage
+## 🎯 Tuning to your app version / collage
 
 - `WATCH_DIR` — the folder photobooth-app writes finished images to (default `media/processed_full`, unchanged in v9).
 - `SESSION_QUIET_SECONDS` — only used when the uploader can't follow photobooth-app's event stream (or files arrive outside a job): a burst of files is one session once no new file has appeared for this long (default `3`). Normally a session runs from the job's start to `finished`, with no count or timer to tune.
 - `PHOTOBOOTH_URL`, `LINK_SERVER_PORT`, `LINK_WAIT_SECONDS`, `LINKS_FILE` — see `.env.example` and [docs/PIPELINE.md](docs/PIPELINE.md).
 - photobooth-app's **Admin → UI settings → `gallery_show_qrcode`** must be on (it is in the committed `config.json`); `qrcode_text_above` / `qrcode_text_below` set the text around the QR.
 
-## Other branches
+## 🌿 Other branches
 
-- `option-a-rclone-drive` — an experiment using photobooth-app 9's **native** Rclone synchronizer; abandoned due to upstream bugs (see that branch's `docs/PIPELINE-OPTION-A.md`).
 - `photobooth-app-4.0.0` — the original Oct 2024 version.
 
 ## 📖 Reference
