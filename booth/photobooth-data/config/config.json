@@ -12,8 +12,8 @@
         "jobcontrol": {
           "countdown_capture": 5.0,
           "countdown_capture_second_following": 5.0,
-          "ask_approval_each_capture": false,
-          "approve_autoconfirm_timeout": 15.0,
+          "ask_approval_each_capture": true,
+          "approve_autoconfirm_timeout": 1.0,
           "show_individual_captures_in_gallery": true
         },
         "processing": {
@@ -292,8 +292,8 @@
           "backend_type": "WebcamPyav",
           "device_identifier": "OBS Virtual Camera",
           "pixel_format": "auto",
-          "cam_resolution_width": 1920,
-          "cam_resolution_height": 1080,
+          "cam_resolution_width": 1280,
+          "cam_resolution_height": 720,
           "cam_framerate": 30,
           "preview_resolution_reduce_factor": 2,
           "frame_skip_count": 3
