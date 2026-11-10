@@ -10,10 +10,10 @@
       {
         "name": "default action",
         "jobcontrol": {
-          "countdown_capture": 4.0,
-          "countdown_capture_second_following": 4.0,
-          "ask_approval_each_capture": false,
-          "approve_autoconfirm_timeout": 15.0,
+          "countdown_capture": 5.0,
+          "countdown_capture_second_following": 5.0,
+          "ask_approval_each_capture": true,
+          "approve_autoconfirm_timeout": 1.0,
           "show_individual_captures_in_gallery": true
         },
         "processing": {
@@ -259,10 +259,10 @@
       "image": null,
       "mirror_effect": true
     },
-    "FRONTPAGE_TEXT": "<div class=\"fixed-center text-h2 text-weight-bold text-center text-white\" style=\"text-shadow: 4px 4px 4px #666;\">ECE OPEN HOUSE 2027 <br>Show 👍 to start 📷</div> ",
-    "TAKEPIC_MSG_TIME": 0.5,
-    "TAKEPIC_MSG_TEXT": "😃",
-    "AUTOCLOSE_NEW_ITEM_ARRIVED": 30,
+    "FRONTPAGE_TEXT": "<div class=\"fixed-center text-h2 text-weight-bold text-center text-white\" style=\"text-shadow: 4px 4px 4px #666;\">ECE OPEN HOUSE 2027 <br><br>Show 👍 to start 📷</div> ",
+    "TAKEPIC_MSG_TIME": 1.0,
+    "TAKEPIC_MSG_TEXT": "Action !!",
+    "AUTOCLOSE_NEW_ITEM_ARRIVED": 45,
     "GALLERY_EMPTY_MSG": "<div class=\"fixed-center text-h2 text-weight-bold text-center text-white\" style=\"text-shadow: 4px 4px 4px #666;\">Empty, Zero, Nada! 🤷‍♂️<br>Let's take some pictures! <br>📷💕</div>",
     "gallery_show_qrcode": true,
     "qrcode_text_above": "👋 Download your photo!",
